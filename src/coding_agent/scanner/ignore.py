@@ -1,0 +1,31 @@
+IGNORE_DIRECTORIES = {
+    ".git",
+    ".idea",
+    ".vscode",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "node_modules",
+    "build",
+    "dist",
+    "target",
+    ".cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".mypy_cache",
+}
+
+IGNORE_EXTENSIONS = {
+    ".class",
+    ".jar",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".pdf",
+    ".zip",
+    ".exe",
+    ".dll",
+    ".so",
+    ".dylib",
+}
