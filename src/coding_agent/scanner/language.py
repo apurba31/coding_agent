@@ -1,6 +1,5 @@
 from ..models.language import Language
 
-
 _EXTENSION_MAP = {
     ".java": Language.JAVA,
     ".py": Language.PYTHON,

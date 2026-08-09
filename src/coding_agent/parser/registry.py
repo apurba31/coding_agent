@@ -1,14 +1,9 @@
-from typing import Dict
-from coding_agent.models.language import Language
+from ..models.language import Language
 from .parser import SourceParser
 
 class ParserRegistry:
     def __init__(self):
-
-        self.parsers: Dict[
-            language,
-            SourceParser,
-        ] = ()
+        self.parsers: dict[Language, SourceParser] = {}
 
     def register(
             self,
