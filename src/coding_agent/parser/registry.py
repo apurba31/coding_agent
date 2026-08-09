@@ -1,6 +1,7 @@
 from ..models.language import Language
 from .parser import SourceParser
 
+
 class ParserRegistry:
     def __init__(self):
         self.parsers: dict[Language, SourceParser] = {}

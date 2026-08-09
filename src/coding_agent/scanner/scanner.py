@@ -8,6 +8,7 @@ from .ignore import IGNORE_DIRECTORIES, IGNORE_EXTENSIONS
 from .language import detect_language
 from .walker import DirectoryWalker
 
+
 class RepositoryScanner:
     def __init__(self, root: Path):
         self.walker = DirectoryWalker()

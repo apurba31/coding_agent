@@ -115,6 +115,7 @@ dependencies = [
     "tqdm~=4.67.1",
     "platformdirs~=4.4.0",
     "typing-extensions~=4.15.0",
+    "ruff~=0.12.9",
 
     ############################################################
     # Token Counting

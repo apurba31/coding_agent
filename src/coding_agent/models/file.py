@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from .language import Language
 
+
 class FileMetadata(BaseModel):
     path: Path
     absolute_path: Path

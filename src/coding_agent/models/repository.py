@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from .file import FileMetadata
 
+
 class Repository(BaseModel):
     root: Path
     files: list[FileMetadata]

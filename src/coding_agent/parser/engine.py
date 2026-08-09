@@ -1,6 +1,9 @@
 from pathlib import Path
+
 from tree_sitter import Parser
+
 from .loader import GrammarLoader
+
 
 class TreeSitterEngine:
     def __init__(self):
