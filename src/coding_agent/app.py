@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from .scanner.scanner import RepositoryScanner
-
 
 def main():
+    from .scanner.scanner import RepositoryScanner
+
     scanner = RepositoryScanner(Path("."))
     repo = scanner.scan(Path("."))
     print()
