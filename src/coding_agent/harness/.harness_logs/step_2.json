@@ -1,0 +1,20 @@
+{
+  "goal": "Read sample.txt and summarize it",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a focused coding agent. Accomplish the goal using available tools."
+    },
+    {
+      "role": "assistant",
+      "content": "Used tool read_file"
+    },
+    {
+      "role": "tool",
+      "content": "Hello from the local workspace file!"
+    }
+  ],
+  "step_count": 2,
+  "max_steps": 3,
+  "status": "SUCCESS"
+}

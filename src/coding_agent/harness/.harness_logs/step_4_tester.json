@@ -1,0 +1,8 @@
+{
+  "goal": "Create a working compute_sum function",
+  "code": "def compute_sum(a, b):\n    return a + b  # Bug fixed!",
+  "test_passed": false,
+  "step_count": 4,
+  "max_steps": 6,
+  "current_node": "tester"
+}
