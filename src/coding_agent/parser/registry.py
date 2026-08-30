@@ -10,12 +10,19 @@ class ParserRegistry:
             self,
             language: Language,
             parser: SourceParser,
-    ): 
-        self.parsers[language] = parser
+    ) -> None:
+        self._parsers[language] = parser
 
     def get(
             self,
             language: Language,
     ) -> SourceParser:
-        return self.parsers[language]
-    
+        try:
+            return self._parsers[language]
+        except KeyError:
+            raise ValueError(
+                f"No parser registered for language: {language}"
+            )
+
+    def supports(self, language: Language) -> bool:
+        return language in self._parsers

@@ -1,9 +1,9 @@
 from pathlib import Path
-
+from typing import Any
 from pydantic import BaseModel
 
 
 class SyntaxTree(BaseModel):
-    path: Path
     language: str
-    root_type: str
+    root: Any
+    source: bytes
