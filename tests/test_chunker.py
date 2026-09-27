@@ -225,8 +225,16 @@ class TestChunkerRouter:
 
     def test_go_and_rust_chunkers_extract_functions_and_structs(self):
         """Go and Rust should produce semantic chunks from real Tree-sitter parse trees."""
-        go_source = """package main\n\nfunc add(a int, b int) int {\n    return a + b\n}\n\ntype Person struct {\n    Name string\n}\n"""
-        rust_source = """fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nstruct Person {\n    name: String,\n}\n"""
+        go_source = (
+            "package main\n\n"
+            "func add(a int, b int) int {\n"
+            "    return a + b\n}\n\n"
+            "type Person struct {\n    Name string\n}\n"
+        )
+        rust_source = (
+            "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\n"
+            "struct Person {\n    name: String,\n}\n"
+        )
 
         for language_name, source, expected_symbol in (
             ("go", go_source, "add"),
@@ -245,9 +253,15 @@ class TestChunkerRouter:
                 is_binary=False,
                 sha256="hash",
             )
-            chunks = (GoChunker() if language_name == "go" else RustChunker()).chunk(
+            chunks = (
+                GoChunker() if language_name == "go" else RustChunker()
+            ).chunk(
                 file,
-                SyntaxTree(language=language_name, root=tree.root_node, source=source.encode("utf-8")),
+                SyntaxTree(
+                    language=language_name,
+                    root=tree.root_node,
+                    source=source.encode("utf-8"),
+                ),
                 source.splitlines(),
             )
             assert any(chunk.symbol == expected_symbol for chunk in chunks)
