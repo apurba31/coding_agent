@@ -142,7 +142,7 @@ class TestMockEmbedder:
         results = embedder.embed_batch(texts)
 
         assert len(results) == 3
-        for result, text in zip(results, texts):
+        for result, text in zip(results, texts, strict=True):
             assert result.text == text
             assert len(result.vector) == 128
 
@@ -262,7 +262,9 @@ def helper_function():
         result2 = embedder.embed_text(chunk2)
 
         # Calculate cosine similarity
-        dot_product = sum(a * b for a, b in zip(result1.vector, result2.vector))
+        dot_product = sum(
+            a * b for a, b in zip(result1.vector, result2.vector, strict=True)
+        )
         # Should be reasonably similar (deterministic, but different)
         assert -1.0 <= dot_product <= 1.0
 
@@ -283,7 +285,7 @@ class TestEmbeddingBatchPerformance:
 
         # Results should match
         assert len(individual_results) == len(batch_results)
-        for ind, batch in zip(individual_results, batch_results):
+        for ind, batch in zip(individual_results, batch_results, strict=True):
             assert ind.vector == batch.vector
 
     def test_large_batch(self):

@@ -1,7 +1,5 @@
 """Tests for the tool subsystem phase."""
 
-from pathlib import Path
-
 import pytest
 
 from coding_agent.tools.filesystem import RepositoryToolbox

@@ -71,6 +71,9 @@ def test_index_and_search_cli_commands_use_repository_pipeline(tmp_path, monkeyp
     assert "indexed" in index_result.output
     assert search_result.exit_code == 0, search_result.output
     assert "meaningful_function" in search_result.output
+    assert "Semantic" in search_result.output
+    assert "BM25" in search_result.output
+    assert "Final" in search_result.output
 
 
 def test_coding_tools_read_repo_files_and_block_path_traversal(tmp_path):
@@ -187,6 +190,8 @@ def test_inspect_and_stats_report_repo_and_index_status(tmp_path, monkeypatch):
     assert "files tracked" in inspected.output
     assert statistics.exit_code == 0, statistics.output
     assert "Vector records" in statistics.output
+    assert "Chunks in source" in statistics.output
+    assert "BM25 records" in statistics.output
     assert "Python files" in statistics.output
 
 

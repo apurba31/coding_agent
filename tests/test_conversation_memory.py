@@ -2,13 +2,10 @@
 
 import pytest
 import tempfile
-from pathlib import Path
-from datetime import datetime
 from coding_agent.memory import (
     Message,
     MessageRole,
     Conversation,
-    ConversationStats,
     ConversationStore,
     ConversationManager,
 )
@@ -217,7 +214,7 @@ def test_conversation_store_list():
 
         conv1 = store.create_conversation(conversation_id="conv_1", title="First")
         conv1.add_message(MessageRole.USER, "Hi")
-        conv2 = store.create_conversation(conversation_id="conv_2", title="Second")
+        store.create_conversation(conversation_id="conv_2", title="Second")
 
         conversations = store.list_conversations()
         assert len(conversations) == 2
@@ -282,11 +279,11 @@ def test_conversation_manager_switch():
         store = ConversationStore(tmpdir)
         manager = ConversationManager(store)
 
-        conv1 = manager.start_conversation(conversation_id="conv_1")
-        conv1_msg = manager.add_user_message("Conv 1 message")
+        manager.start_conversation(conversation_id="conv_1")
+        manager.add_user_message("Conv 1 message")
 
-        conv2 = manager.start_conversation(conversation_id="conv_2")
-        conv2_msg = manager.add_user_message("Conv 2 message")
+        manager.start_conversation(conversation_id="conv_2")
+        manager.add_user_message("Conv 2 message")
 
         # Switch back to conv1
         manager.switch_conversation("conv_1")
@@ -334,7 +331,10 @@ def test_conversation_summary_for_rolling_context():
     """Older turns should be condensed into a summary while recent turns stay visible."""
     conv = Conversation(conversation_id="conv_summary")
     conv.add_message(MessageRole.USER, "Help me build a Python API client.")
-    conv.add_message(MessageRole.ASSISTANT, "I will inspect the existing client and draft the wrapper.")
+    conv.add_message(
+        MessageRole.ASSISTANT,
+        "I will inspect the existing client and draft the wrapper.",
+    )
     conv.add_message(MessageRole.USER, "Can you explain the auth flow?")
     conv.add_message(MessageRole.ASSISTANT, "The flow uses a token refresh mechanism.")
     conv.add_message(MessageRole.USER, "What edge cases remain?")

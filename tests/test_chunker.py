@@ -4,16 +4,22 @@ import pytest
 from pathlib import Path
 from datetime import datetime
 
+from tree_sitter import Parser
+from tree_sitter_language_pack import get_language
+
 from coding_agent.chunker.models import Chunk, ChunkKind
 from coding_agent.chunker.chunker import (
     Chunker,
     PythonChunker,
     JavaChunker,
     JavaScriptChunker,
+    GoChunker,
+    RustChunker,
 )
 from coding_agent.models.file import FileMetadata
 from coding_agent.models.language import Language
 from coding_agent.models.ast import SyntaxTree
+from coding_agent.parser.registry import ParserRegistry
 
 
 class TestChunkModel:
@@ -214,6 +220,38 @@ class TestChunkerRouter:
         assert "java" in chunker._chunkers
         assert "javascript" in chunker._chunkers
         assert "typescript" in chunker._chunkers
+        assert "go" in chunker._chunkers
+        assert "rust" in chunker._chunkers
+
+    def test_go_and_rust_chunkers_extract_functions_and_structs(self):
+        """Go and Rust should produce semantic chunks from real Tree-sitter parse trees."""
+        go_source = """package main\n\nfunc add(a int, b int) int {\n    return a + b\n}\n\ntype Person struct {\n    Name string\n}\n"""
+        rust_source = """fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nstruct Person {\n    name: String,\n}\n"""
+
+        for language_name, source, expected_symbol in (
+            ("go", go_source, "add"),
+            ("rust", rust_source, "add"),
+        ):
+            parser = Parser()
+            parser.language = get_language(language_name)
+            tree = parser.parse(source.encode("utf-8"))
+            file = FileMetadata(
+                path=Path(f"example.{language_name}"),
+                absolute_path=Path(f"/tmp/example.{language_name}"),
+                extension=f".{language_name}",
+                language=Language.GO if language_name == "go" else Language.RUST,
+                size=len(source),
+                last_modified=datetime.now(),
+                is_binary=False,
+                sha256="hash",
+            )
+            chunks = (GoChunker() if language_name == "go" else RustChunker()).chunk(
+                file,
+                SyntaxTree(language=language_name, root=tree.root_node, source=source.encode("utf-8")),
+                source.splitlines(),
+            )
+            assert any(chunk.symbol == expected_symbol for chunk in chunks)
+            assert any(chunk.symbol == "Person" for chunk in chunks)
 
     def test_unsupported_language_raises_error(self):
         """Test that unsupported languages raise ValueError."""
@@ -264,6 +302,22 @@ class TestChunkKind:
         assert ChunkKind.CLASS.value == "class"
         assert ChunkKind.FUNCTION.value == "function"
         assert ChunkKind.METHOD.value == "method"
+
+
+class TestParserRegistry:
+    """Regression tests for parser registration."""
+
+    def test_register_and_get_parser(self):
+        """Parsers should be stored and retrievable by language."""
+        registry = ParserRegistry()
+
+        class DummyParser:
+            pass
+
+        registry.register(Language.PYTHON, DummyParser())
+
+        assert registry.supports(Language.PYTHON)
+        assert isinstance(registry.get(Language.PYTHON), DummyParser)
 
 
 class TestChunkIntegration:

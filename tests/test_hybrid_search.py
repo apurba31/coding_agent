@@ -2,7 +2,6 @@
 
 import pytest
 from coding_agent.chunker.models import Chunk, ChunkKind
-from coding_agent.embedding.models import EmbeddingResult
 from coding_agent.embedding.mock import MockEmbedder
 from coding_agent.search.keyword import BM25Searcher
 from coding_agent.search.semantic import SemanticSearcher
@@ -162,7 +161,7 @@ def test_hybrid_search_empty_query(bm25_searcher, semantic_searcher):
     
     # Empty query should raise ValueError from embedder
     with pytest.raises(ValueError):
-        results = hybrid.search("", top_k=5)
+        hybrid.search("", top_k=5)
 
 
 def test_hybrid_search_consistency(bm25_searcher, semantic_searcher):

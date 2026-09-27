@@ -5,10 +5,8 @@ import time
 from coding_agent.tools import (
     ToolRegistry,
     ToolExecutor,
-    ToolDefinition,
     ToolParameter,
     ToolCall,
-    ToolResult,
 )
 
 

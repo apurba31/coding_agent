@@ -1,5 +1,4 @@
 from pathlib import Path
-from coding_agent.chunker.models import Chunk, ChunkKind
 from coding_agent.search.semantic import SemanticSearcher
 from coding_agent.embedding.models import EmbeddingResult
 from coding_agent.embedding.embedder import Embedder
@@ -30,7 +29,13 @@ class MockLanceDBClient:
         self.last_query_vector = None
         self.last_limit = None
 
-    def search(self, query_vector: list[float], limit: int = 5, table_name: str = "chunks", where: str | None = None):
+    def search(
+        self,
+        query_vector: list[float],
+        limit: int = 5,
+        table_name: str = "chunks",
+        where: str | None = None,
+    ):
         self.last_query_vector = query_vector
         self.last_limit = limit
         return self.records
