@@ -1,7 +1,8 @@
 """Tests for embedding layer."""
 
-import pytest
 import math
+
+import pytest
 
 from coding_agent.embedding.embedder import Embedder
 from coding_agent.embedding.mock import MockEmbedder

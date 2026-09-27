@@ -1,7 +1,9 @@
 from pathlib import Path
-from coding_agent.search.semantic import SemanticSearcher
-from coding_agent.embedding.models import EmbeddingResult
+
 from coding_agent.embedding.embedder import Embedder
+from coding_agent.embedding.models import EmbeddingResult
+from coding_agent.search.semantic import SemanticSearcher
+
 
 class MockEmbedder(Embedder):
     def __init__(self):

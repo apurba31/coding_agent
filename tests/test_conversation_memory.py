@@ -1,13 +1,15 @@
 """Tests for conversation memory functionality."""
 
-import pytest
 import tempfile
+
+import pytest
+
 from coding_agent.memory import (
+    Conversation,
+    ConversationManager,
+    ConversationStore,
     Message,
     MessageRole,
-    Conversation,
-    ConversationStore,
-    ConversationManager,
 )
 
 

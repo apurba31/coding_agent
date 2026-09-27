@@ -1,24 +1,24 @@
 """Tests for AST-aware chunking functionality."""
 
-import pytest
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
+import pytest
 from tree_sitter import Parser
 from tree_sitter_language_pack import get_language
 
-from coding_agent.chunker.models import Chunk, ChunkKind
 from coding_agent.chunker.chunker import (
     Chunker,
-    PythonChunker,
+    GoChunker,
     JavaChunker,
     JavaScriptChunker,
-    GoChunker,
+    PythonChunker,
     RustChunker,
 )
+from coding_agent.chunker.models import Chunk, ChunkKind
+from coding_agent.models.ast import SyntaxTree
 from coding_agent.models.file import FileMetadata
 from coding_agent.models.language import Language
-from coding_agent.models.ast import SyntaxTree
 from coding_agent.parser.registry import ParserRegistry
 
 

@@ -1,15 +1,17 @@
 """Tests for hybrid search functionality."""
 
+import tempfile
+from pathlib import Path
+
 import pytest
+
 from coding_agent.chunker.models import Chunk, ChunkKind
 from coding_agent.embedding.mock import MockEmbedder
-from coding_agent.search.keyword import BM25Searcher
-from coding_agent.search.semantic import SemanticSearcher
 from coding_agent.search.hybrid import HybridSearcher
+from coding_agent.search.keyword import BM25Searcher
 from coding_agent.search.models import SearchResult
+from coding_agent.search.semantic import SemanticSearcher
 from coding_agent.vectordb.client import LanceDBClient
-from pathlib import Path
-import tempfile
 
 
 @pytest.fixture

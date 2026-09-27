@@ -1,12 +1,14 @@
 """Tests for tool calling framework."""
 
-import pytest
 import time
+
+import pytest
+
 from coding_agent.tools import (
-    ToolRegistry,
+    ToolCall,
     ToolExecutor,
     ToolParameter,
-    ToolCall,
+    ToolRegistry,
 )
 
 

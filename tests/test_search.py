@@ -1,6 +1,7 @@
 from pathlib import Path
+
 from coding_agent.chunker.models import Chunk, ChunkKind
-from coding_agent.search.keyword import CodeTokenizer, BM25Searcher
+from coding_agent.search.keyword import BM25Searcher, CodeTokenizer
 
 
 def test_code_tokenizer_snake_case():
