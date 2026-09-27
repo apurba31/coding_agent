@@ -47,7 +47,7 @@ def test_bm25_searcher():
         parent_symbol="UserService",
         docstring="Finds a user by ID.",
     )
-    
+
     chunk2 = Chunk(
         chunk_id="chunk_2",
         path=Path("src/user/UserRepository.java"),
@@ -61,12 +61,12 @@ def test_bm25_searcher():
     )
 
     searcher = BM25Searcher([chunk1, chunk2])
-    
+
     # Query matching chunk 1
     results = searcher.search("UserService findUser", top_k=2)
     assert len(results) > 0
     assert results[0].chunk.chunk_id == "chunk_1"
-    
+
     # Query matching chunk 2
     results2 = searcher.search("UserRepository findById", top_k=2)
     assert len(results2) > 0

@@ -114,9 +114,7 @@ def test_hybrid_searcher_initialization(bm25_searcher, semantic_searcher):
 
 def test_hybrid_searcher_custom_weights(bm25_searcher, semantic_searcher):
     """Test hybrid searcher with custom weights."""
-    hybrid = HybridSearcher(
-        bm25_searcher, semantic_searcher, bm25_weight=0.3, semantic_weight=0.7
-    )
+    hybrid = HybridSearcher(bm25_searcher, semantic_searcher, bm25_weight=0.3, semantic_weight=0.7)
     # Should normalize to ~0.3 and ~0.7
     assert abs(hybrid.bm25_weight - 0.3 / 1.0) < 0.01
     assert abs(hybrid.semantic_weight - 0.7 / 1.0) < 0.01
@@ -147,9 +145,7 @@ def test_hybrid_search_top_k_limit(bm25_searcher, semantic_searcher):
 
 def test_hybrid_search_score_fusion(bm25_searcher, semantic_searcher):
     """Test that scores are properly fused."""
-    hybrid = HybridSearcher(
-        bm25_searcher, semantic_searcher, bm25_weight=0.5, semantic_weight=0.5
-    )
+    hybrid = HybridSearcher(bm25_searcher, semantic_searcher, bm25_weight=0.5, semantic_weight=0.5)
     results = hybrid.search("calculate", top_k=3)
 
     # Scores should be normalized to roughly [0, 1] range due to fusion
@@ -160,7 +156,7 @@ def test_hybrid_search_score_fusion(bm25_searcher, semantic_searcher):
 def test_hybrid_search_empty_query(bm25_searcher, semantic_searcher):
     """Test hybrid search with empty query raises error."""
     hybrid = HybridSearcher(bm25_searcher, semantic_searcher)
-    
+
     # Empty query should raise ValueError from embedder
     with pytest.raises(ValueError):
         hybrid.search("", top_k=5)

@@ -1,6 +1,5 @@
 """Hybrid search implementation combining BM25 and semantic search."""
 
-
 from coding_agent.observability import MetricsCollector
 
 from .keyword import BM25Searcher
@@ -30,7 +29,7 @@ class HybridSearcher:
         self.bm25_searcher = bm25_searcher
         self.semantic_searcher = semantic_searcher
         self.metrics = metrics or bm25_searcher.metrics
-        
+
         # Normalize weights
         total = bm25_weight + semantic_weight
         self.bm25_weight = bm25_weight / total if total > 0 else 0.5
@@ -79,7 +78,7 @@ class HybridSearcher:
         # LanceDB returns _distance where lower = more similar
         semantic_min_score = min([r.score for r in semantic_results], default=0.0)
         semantic_max_score = max([r.score for r in semantic_results], default=1.0)
-        
+
         # Invert: similarity = 1 - (normalized_distance)
         score_range = semantic_max_score - semantic_min_score
         if score_range == 0:

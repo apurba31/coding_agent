@@ -58,9 +58,7 @@ class RepositoryIndexer:
         manifest_path = Path(self.db_client.uri) / "index_manifest.json"
         self.manifest_store = IndexManifestStore(manifest_path)
 
-    def _parse_files(
-        self, files: list[FileMetadata]
-    ) -> tuple[list[Chunk], set[str], set[str]]:
+    def _parse_files(self, files: list[FileMetadata]) -> tuple[list[Chunk], set[str], set[str]]:
         """Parse selected files, returning chunks, successful paths, and failures."""
         chunks: list[Chunk] = []
         parsed_paths: set[str] = set()
@@ -72,9 +70,7 @@ class RepositoryIndexer:
                 source_bytes = file.absolute_path.read_bytes()
                 source = source_bytes.decode("utf-8")
                 with self.metrics.measure("parse"):
-                    tree = self.parser.parse(
-                        file.absolute_path, file.language.value.lower()
-                    )
+                    tree = self.parser.parse(file.absolute_path, file.language.value.lower())
                 syntax_tree = SyntaxTree(
                     language=file.language.value,
                     root=tree.root_node,
@@ -119,9 +115,7 @@ class RepositoryIndexer:
         supported_files = [
             file for file in repository.files if file.language in SUPPORTED_LANGUAGES
         ]
-        current_hashes = {
-            file.path.as_posix(): file.sha256 for file in supported_files
-        }
+        current_hashes = {file.path.as_posix(): file.sha256 for file in supported_files}
         previous = self.manifest_store.load()
         root_key = str(root)
         same_repository = previous is not None and previous.repository_root == root_key
@@ -177,9 +171,7 @@ class RepositoryIndexer:
                 if path in previous.file_hashes:
                     next_hashes[path] = previous.file_hashes[path]
 
-        self.manifest_store.save(
-            IndexManifest(repository_root=root_key, file_hashes=next_hashes)
-        )
+        self.manifest_store.save(IndexManifest(repository_root=root_key, file_hashes=next_hashes))
         unchanged_files = 0 if full_rebuild else len(supported_files) - len(files_to_parse)
         return IndexSummary(
             scanned_files=repository.indexed_files,

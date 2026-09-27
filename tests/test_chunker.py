@@ -253,9 +253,7 @@ class TestChunkerRouter:
                 is_binary=False,
                 sha256="hash",
             )
-            chunks = (
-                GoChunker() if language_name == "go" else RustChunker()
-            ).chunk(
+            chunks = (GoChunker() if language_name == "go" else RustChunker()).chunk(
                 file,
                 SyntaxTree(
                     language=language_name,

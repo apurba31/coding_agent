@@ -1,7 +1,6 @@
 """Sentence Transformers embedding implementation."""
 
 import numpy as np
-from typing import Optional
 
 from .embedder import Embedder
 from .models import EmbeddingConfig, EmbeddingResult
@@ -13,7 +12,7 @@ class SentenceTransformerEmbedder(Embedder):
     Leverages pre-trained models for semantic understanding of code.
     """
 
-    def __init__(self, config: Optional[EmbeddingConfig] = None):
+    def __init__(self, config: EmbeddingConfig | None = None):
         """Initialize Sentence Transformers embedder.
 
         Args:
@@ -26,11 +25,11 @@ class SentenceTransformerEmbedder(Embedder):
 
         try:
             from sentence_transformers import SentenceTransformer
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "sentence-transformers not installed. "
                 "Install with: pip install sentence-transformers"
-            )
+            ) from err
 
         self._model = SentenceTransformer(
             self.config.model_name,
@@ -99,7 +98,7 @@ class SentenceTransformerEmbedder(Embedder):
                 vector=vector.tolist(),
                 dimension=len(vector),
             )
-            for text, vector in zip(non_empty_texts, vectors)
+            for text, vector in zip(non_empty_texts, vectors, strict=True)
         ]
 
     @property

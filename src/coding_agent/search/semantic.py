@@ -23,21 +23,21 @@ class SemanticSearcher:
 
     def search(self, query: str, top_k: int) -> list[SearchResult]:
         """Rank documents based on semantic vector similarity and return the top_k results.
-        
+
         Args:
             query: The search query string.
             top_k: Number of results to return.
-            
+
         Returns:
             List of SearchResult objects containing the chunk and distance score.
         """
         # 1. Embed Query
         with self.metrics.measure("embedding.query"):
             query_result = self.embedder.embed_text(query)
-        
+
         # 2. Vector Search
         records = self.db_client.search(query_result.vector, limit=top_k)
-        
+
         results = []
         for record in records:
             chunk = record_to_chunk(record)
@@ -57,4 +57,3 @@ class SemanticSearcher:
             )
         self.metrics.observe("search.semantic.results", len(results))
         return results
-

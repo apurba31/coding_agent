@@ -1,4 +1,5 @@
 """Tests for structured latency, counter, and distribution instrumentation."""
+
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -48,9 +49,7 @@ def test_metrics_collector_measure_records_on_exception():
 def test_indexing_records_pipeline_timings_and_batch_sizes(tmp_path):
     repo = tmp_path / "repo"
     repo.mkdir()
-    (repo / "module.py").write_text(
-        "def calculate():\n    return 42\n", encoding="utf-8"
-    )
+    (repo / "module.py").write_text("def calculate():\n    return 42\n", encoding="utf-8")
     metrics = MetricsCollector()
     embedder = MockEmbedder(embedding_dim=16)
     db = LanceDBClient(tmp_path / "vectors", dimension=16, metrics=metrics)

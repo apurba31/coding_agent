@@ -1,4 +1,5 @@
 """Tests for sequential researcher-to-synthesizer orchestration."""
+
 from coding_agent.agent.team import MultiAgentCoordinator
 
 

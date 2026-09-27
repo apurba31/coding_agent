@@ -1,9 +1,9 @@
 """Embedding layer for code chunk semantic understanding."""
 
 from .embedder import Embedder
-from .sentence_transformers import SentenceTransformerEmbedder
 from .mock import MockEmbedder
 from .models import EmbeddingConfig, EmbeddingResult
+from .sentence_transformers import SentenceTransformerEmbedder
 
 __all__ = [
     "Embedder",

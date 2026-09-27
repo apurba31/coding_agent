@@ -69,9 +69,7 @@ class NavigationIndex:
                 code=chunk.code,
             )
             existing = definitions.get(key)
-            if existing is None or (
-                chunk.parent_symbol and "." not in existing.qualified_name
-            ):
+            if existing is None or (chunk.parent_symbol and "." not in existing.qualified_name):
                 definitions[key] = candidate
         # Some language chunkers can visit the same AST node through multiple
         # recursive paths; collapse identical source locations at the boundary.
@@ -109,9 +107,7 @@ class NavigationIndex:
                     root=tree.root_node,
                     source=source_bytes,
                 )
-                chunks.extend(
-                    chunker.chunk(file, syntax_tree, source_bytes.decode("utf-8"))
-                )
+                chunks.extend(chunker.chunk(file, syntax_tree, source_bytes.decode("utf-8")))
             except (OSError, UnicodeError, ValueError, RuntimeError):
                 # Navigation should remain useful if an individual file is unreadable.
                 logger.warning("Unable to index navigation symbols in %s", file.path)
@@ -129,8 +125,7 @@ class NavigationIndex:
         return [
             definition
             for definition in self._definitions
-            if definition.name.casefold() == query
-            or definition.qualified_name.casefold() == query
+            if definition.name.casefold() == query or definition.qualified_name.casefold() == query
         ]
 
     def search_symbols(self, query: str, limit: int = 20) -> list[SymbolLocation]:
@@ -179,8 +174,7 @@ class NavigationIndex:
             return []
         pattern = re.compile(rf"(?<![\w]){re.escape(name)}(?![\w])")
         definition_lines = {
-            (item.path.as_posix(), item.start_line)
-            for item in self.find_definition(symbol)
+            (item.path.as_posix(), item.start_line) for item in self.find_definition(symbol)
         }
         results: list[ReferenceLocation] = []
         for source_path in self._source_files():

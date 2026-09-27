@@ -1,4 +1,5 @@
 """Application-level tests for indexing, retrieval, and repository tools."""
+
 from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace

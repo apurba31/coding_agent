@@ -1,4 +1,5 @@
 """Agent state models."""
+
 from typing import Any, Literal, TypedDict
 
 from coding_agent.planner.models import TaskPlan
@@ -13,4 +14,3 @@ class AgentState(TypedDict):
     max_steps: int
     status: Literal["RUNNING", "SUCCESS", "FAILED"]
     plan: TaskPlan | None
-    

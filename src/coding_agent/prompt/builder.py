@@ -52,7 +52,9 @@ class PromptBuilder:
 
         for result in sorted(results, key=lambda item: item.score, reverse=True):
             chunk = result.chunk
-            chunk_path = chunk.path.as_posix() if hasattr(chunk.path, "as_posix") else str(chunk.path)
+            chunk_path = (
+                chunk.path.as_posix() if hasattr(chunk.path, "as_posix") else str(chunk.path)
+            )
             snippet = (
                 f"FILE: {chunk_path}\n"
                 f"LANGUAGE: {chunk.language}\n"

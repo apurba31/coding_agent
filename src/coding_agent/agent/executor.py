@@ -1,4 +1,5 @@
 """Main agent execution loop."""
+
 import json
 import logging
 from typing import Any
@@ -211,7 +212,7 @@ class AgentExecutor:
             if response_message.content:
                 assistant_msg["content"] = response_message.content
                 logger.info(f"Assistant: {response_message.content}")
-            
+
             if tool_calls:
                 # Format tool calls for the message history
                 assistant_msg["tool_calls"] = [
@@ -225,7 +226,7 @@ class AgentExecutor:
                     }
                     for tc in tool_calls
                 ]
-            
+
             state["messages"].append(assistant_msg)
             if conversation:
                 conversation.add_message(
@@ -245,13 +246,9 @@ class AgentExecutor:
                         logger.warning(f"Failed to parse arguments for tool {tool_name}")
 
                     logger.info(f"Tool Call: {tool_name}({arguments})")
-                    
-                    call_obj = ToolCall(
-                        tool_name=tool_name,
-                        arguments=arguments,
-                        call_id=tc.id
-                    )
-                    
+
+                    call_obj = ToolCall(tool_name=tool_name, arguments=arguments, call_id=tc.id)
+
                     # A model may ignore the plan's tool policy; keep execution gated.
                     if tools_allowed:
                         result = self.tool_executor.execute(call_obj)
@@ -264,7 +261,7 @@ class AgentExecutor:
                             "Tool execution was not enabled by the task plan. "
                             "Answer using available context instead."
                         )
-                    
+
                     if tools_allowed and result.success:
                         logger.info(
                             "Tool Result (%0.2fms): %s",

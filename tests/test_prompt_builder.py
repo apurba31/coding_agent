@@ -68,6 +68,6 @@ def test_prompt_builder_respects_token_budget_and_deduplicates_files():
     ]
 
     context = builder.build_repository_context(results, token_budget=30)
-    assert "src/a.py" in context.replace('\\', '/')
-    assert "src/b.py" in context.replace('\\', '/') or "src/b.py" not in context.replace('\\', '/')
+    assert "src/a.py" in context.replace("\\", "/")
+    assert "src/b.py" in context.replace("\\", "/") or "src/b.py" not in context.replace("\\", "/")
     assert len(context.split()) <= 60

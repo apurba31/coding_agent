@@ -79,9 +79,7 @@ class LangGraphAgent:
         context = self.executor.retrieve_context(state["goal"])
         additional_context = state.get("additional_context")
         if additional_context:
-            context = "\n\n".join(
-                item for item in (context, additional_context) if item
-            )
+            context = "\n\n".join(item for item in (context, additional_context) if item)
         return {"context": context}
 
     @staticmethod

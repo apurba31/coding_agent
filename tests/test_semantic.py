@@ -8,11 +8,11 @@ from coding_agent.search.semantic import SemanticSearcher
 class MockEmbedder(Embedder):
     def __init__(self):
         super().__init__()
-        
+
     def embed_text(self, text: str) -> EmbeddingResult:
         # Mock embedding, always returns a dummy vector
         return EmbeddingResult(vector=[0.1, 0.2, 0.3], text=text, dimension=3)
-        
+
     def embed_batch(self, texts: list[str]) -> list[EmbeddingResult]:
         return [self.embed_text(t) for t in texts]
 
@@ -45,7 +45,7 @@ class MockLanceDBClient:
 
 def test_semantic_searcher():
     embedder = MockEmbedder()
-    
+
     mock_records = [
         {
             "chunk_id": "chunk_1",
@@ -60,19 +60,19 @@ def test_semantic_searcher():
             "docstring": "Finds a user by ID.",
             "embedding_text": "Language: java...",
             "vector": [0.1, 0.2, 0.3],
-            "_distance": 0.05
+            "_distance": 0.05,
         }
     ]
     db_client = MockLanceDBClient(mock_records)
-    
+
     searcher = SemanticSearcher(embedder=embedder, db_client=db_client)
-    
+
     results = searcher.search("UserService findUser", top_k=2)
-    
+
     # Assert query was embedded
     assert db_client.last_query_vector == [0.1, 0.2, 0.3]
     assert db_client.last_limit == 2
-    
+
     # Assert result
     assert len(results) == 1
     assert results[0].chunk.chunk_id == "chunk_1"

@@ -36,9 +36,7 @@ class ScoreFusionReranker(Reranker):
             if bm25_score == 0.0 and semantic_score == 0.0:
                 final_score = float(result.score)
             else:
-                final_score = (
-                    self.alpha * semantic_score + (1.0 - self.alpha) * bm25_score
-                )
+                final_score = self.alpha * semantic_score + (1.0 - self.alpha) * bm25_score
 
             scored.append(
                 replace(

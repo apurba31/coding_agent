@@ -18,6 +18,7 @@ from coding_agent.agent.team import (
     MultiAgentCoordinator,
 )
 from coding_agent.agent.workflow import LangGraphAgent
+from coding_agent.embedding.mock import MockEmbedder
 from coding_agent.embedding.models import EmbeddingConfig
 from coding_agent.embedding.sentence_transformers import SentenceTransformerEmbedder
 from coding_agent.indexing.manifest import IndexManifestStore
@@ -64,9 +65,7 @@ def _show_index_status(repo: Path, db_path: Path) -> None:
     if manifest is None:
         console.print("[yellow]Index manifest: not found[/yellow]")
     elif manifest.repository_root != str(repo.resolve()):
-        console.print(
-            f"[yellow]Index manifest belongs to {manifest.repository_root}[/yellow]"
-        )
+        console.print(f"[yellow]Index manifest belongs to {manifest.repository_root}[/yellow]")
     else:
         console.print(f"Index manifest: {len(manifest.file_hashes)} files tracked")
 
@@ -99,8 +98,7 @@ def _format_references(references) -> str:
     if not references:
         return "No matching references found."
     return "\n".join(
-        f"{item.path}:{item.line}: {item.code}"
-        + (" [definition]" if item.is_definition else "")
+        f"{item.path}:{item.line}: {item.code}" + (" [definition]" if item.is_definition else "")
         for item in references
     )
 
@@ -182,9 +180,7 @@ def create_coding_tools(
         "Search AST-indexed functions, methods, classes, and interfaces.",
         [
             ToolParameter("query", "Symbol name or identifier terms", "string"),
-            ToolParameter(
-                "limit", "Maximum definitions", "integer", required=False, default=20
-            ),
+            ToolParameter("limit", "Maximum definitions", "integer", required=False, default=20),
         ],
     )
     return registry
@@ -193,17 +189,14 @@ def create_coding_tools(
 def _watch_filter(_change: object, path: str) -> bool:
     """Ignore generated directories and non-source files in watch mode."""
     changed_path = Path(path)
-    return (
-        changed_path.suffix.lower() in INDEXABLE_SUFFIXES
-        and not any(part in IGNORE_DIRECTORIES for part in changed_path.parts)
+    return changed_path.suffix.lower() in INDEXABLE_SUFFIXES and not any(
+        part in IGNORE_DIRECTORIES for part in changed_path.parts
     )
 
 
 @app.command()
 def index(
-    repo_argument: Annotated[
-        Path | None, typer.Argument(exists=True, file_okay=False)
-    ] = None,
+    repo_argument: Annotated[Path | None, typer.Argument(exists=True, file_okay=False)] = None,
     repo_option: Annotated[
         Path | None, typer.Option("--repo", exists=True, file_okay=False)
     ] = None,
@@ -222,7 +215,11 @@ def index(
     def run_index(rebuild: bool) -> None:
         metrics = get_metrics_collector()
         before = metrics.snapshot()
-        summary = indexer.index(repo, overwrite=rebuild)
+        with console.status(
+            "[bold green]Scanning, parsing, embedding, and storing repository...[/bold green]",
+            spinner="dots",
+        ):
+            summary = indexer.index(repo, overwrite=rebuild)
         after = metrics.snapshot()
         typer.echo(
             f"Scanned {summary.scanned_files} files; indexed {summary.chunks} changed chunks "
@@ -268,7 +265,8 @@ def reindex(
     """Discard the current vector table and perform a complete rebuild."""
     embedder = _make_embedder()
     db_client = _make_db_client(db_path, embedder.embedding_dimension)
-    summary = RepositoryIndexer(embedder, db_client).index(repo, overwrite=True)
+    with console.status("[bold green]Rebuilding repository index...[/bold green]", spinner="dots"):
+        summary = RepositoryIndexer(embedder, db_client).index(repo, overwrite=True)
     typer.echo(
         f"Rebuilt index: scanned {summary.scanned_files} files; created "
         f"{summary.chunks} chunks from {summary.parsed_files} files; "
@@ -327,8 +325,15 @@ def stats(
 
     db_client = _make_db_client(db_path, dimension=384)
     vector_count = db_client.count()
+    chunk_collector = RepositoryIndexer(MockEmbedder(embedding_dim=384), db_client)
+    chunks, _, parsed_files, failed_files = chunk_collector.collect_chunks(repo)
     table.add_section()
+    table.add_row("Chunks in source", f"{len(chunks):,}")
     table.add_row("Vector records", f"{vector_count:,}")
+    table.add_row("BM25 records", f"{len(chunks):,}")
+    table.add_row("Files parsed for BM25", f"{parsed_files:,}")
+    if failed_files:
+        table.add_row("Files failed during parsing", f"{failed_files:,}")
     manifest = IndexManifestStore(db_path / "index_manifest.json").load()
     if manifest and manifest.repository_root == str(repo):
         tracked_count = len(manifest.file_hashes)
@@ -371,12 +376,34 @@ def search(
     if not results:
         typer.echo("No matching code found.")
         return
-    for result in results:
-        typer.echo(
-            f"\n{result.chunk.path}:{result.chunk.start_line}-"
-            f"{result.chunk.end_line}  score={result.score:.3f}"
+    table = Table(title=f"Search results: {query}")
+    table.add_column("#", justify="right")
+    table.add_column("Path", overflow="fold")
+    table.add_column("Symbol", overflow="fold")
+    table.add_column("Lines", justify="right")
+    table.add_column("Semantic", justify="right")
+    table.add_column("BM25", justify="right")
+    table.add_column("Final", justify="right", style="bold green")
+    for rank, result in enumerate(results, start=1):
+        final_score = result.final_score if result.final_score is not None else result.score
+        table.add_row(
+            str(rank),
+            str(result.chunk.path),
+            result.chunk.display_name,
+            f"{result.chunk.start_line}-{result.chunk.end_line}",
+            _format_score(result.semantic_score),
+            _format_score(result.bm25_score),
+            _format_score(final_score),
         )
-        typer.echo(result.chunk.code)
+    console.print(table)
+    for rank, result in enumerate(results, start=1):
+        console.print(f"[bold cyan]Result {rank}[/bold cyan]")
+        console.print(Text(result.chunk.code))
+
+
+def _format_score(score: float | None) -> str:
+    """Format an optional retrieval score for the CLI results table."""
+    return f"{score:.3f}" if score is not None else "—"
 
 
 @app.command("find-definition")
@@ -499,9 +526,7 @@ def chat(
             )
             status = state["status"]
             active_manager = runner.conversation_manager
-        active_conversation = (
-            active_manager.get_active_conversation() if active_manager else None
-        )
+        active_conversation = active_manager.get_active_conversation() if active_manager else None
         if conversation_id is None and active_conversation:
             conversation_id = active_conversation.conversation_id
             typer.echo(f"Saved conversation ID: {conversation_id}")

@@ -1,7 +1,6 @@
 """Mock embedder for testing without loading models."""
 
 import hashlib
-from typing import Optional
 
 from .embedder import Embedder
 from .models import EmbeddingConfig, EmbeddingResult
@@ -16,7 +15,7 @@ class MockEmbedder(Embedder):
 
     def __init__(
         self,
-        config: Optional[EmbeddingConfig] = None,
+        config: EmbeddingConfig | None = None,
         embedding_dim: int = 768,
     ):
         """Initialize mock embedder.

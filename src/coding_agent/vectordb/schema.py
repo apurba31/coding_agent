@@ -17,20 +17,22 @@ def get_chunk_schema(dimension: int = 384) -> pa.Schema:
     Returns:
         PyArrow Schema for chunk storage.
     """
-    return pa.schema([
-        pa.field("chunk_id", pa.string(), nullable=False),
-        pa.field("path", pa.string(), nullable=False),
-        pa.field("language", pa.string(), nullable=False),
-        pa.field("start_line", pa.int64(), nullable=False),
-        pa.field("end_line", pa.int64(), nullable=False),
-        pa.field("symbol", pa.string(), nullable=False),
-        pa.field("symbol_kind", pa.string(), nullable=False),
-        pa.field("parent_symbol", pa.string(), nullable=True),
-        pa.field("code", pa.string(), nullable=False),
-        pa.field("docstring", pa.string(), nullable=True),
-        pa.field("embedding_text", pa.string(), nullable=False),
-        pa.field("vector", pa.list_(pa.float32(), dimension), nullable=False),
-    ])
+    return pa.schema(
+        [
+            pa.field("chunk_id", pa.string(), nullable=False),
+            pa.field("path", pa.string(), nullable=False),
+            pa.field("language", pa.string(), nullable=False),
+            pa.field("start_line", pa.int64(), nullable=False),
+            pa.field("end_line", pa.int64(), nullable=False),
+            pa.field("symbol", pa.string(), nullable=False),
+            pa.field("symbol_kind", pa.string(), nullable=False),
+            pa.field("parent_symbol", pa.string(), nullable=True),
+            pa.field("code", pa.string(), nullable=False),
+            pa.field("docstring", pa.string(), nullable=True),
+            pa.field("embedding_text", pa.string(), nullable=False),
+            pa.field("vector", pa.list_(pa.float32(), dimension), nullable=False),
+        ]
+    )
 
 
 def chunk_to_record(chunk: Chunk, vector: list[float]) -> dict[str, Any]:

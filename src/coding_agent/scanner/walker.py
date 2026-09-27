@@ -10,9 +10,7 @@ class DirectoryWalker:
         for current, directories, files in os.walk(root):
             current_path = Path(current)
             child_directories = list(directories)
-            directories[:] = [
-                name for name in directories if name not in IGNORE_DIRECTORIES
-            ]
+            directories[:] = [name for name in directories if name not in IGNORE_DIRECTORIES]
 
             for name in child_directories:
                 yield current_path / name

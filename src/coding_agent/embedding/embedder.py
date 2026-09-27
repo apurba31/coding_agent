@@ -1,9 +1,8 @@
 """Abstract base class for embedding providers."""
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
-from .models import EmbeddingResult, EmbeddingConfig
+from .models import EmbeddingConfig, EmbeddingResult
 
 
 class Embedder(ABC):
@@ -13,7 +12,7 @@ class Embedder(ABC):
     specific embedding implementation (e.g., Sentence Transformers).
     """
 
-    def __init__(self, config: Optional[EmbeddingConfig] = None):
+    def __init__(self, config: EmbeddingConfig | None = None):
         """Initialize embedder.
 
         Args:

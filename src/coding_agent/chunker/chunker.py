@@ -4,8 +4,8 @@ import hashlib
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from coding_agent.models.file import FileMetadata
 from coding_agent.models.ast import SyntaxTree
+from coding_agent.models.file import FileMetadata
 
 from .models import Chunk, ChunkKind
 
@@ -207,9 +207,7 @@ class PythonChunker(LanguageChunker):
 
         # Continue walking
         for child in node.children:
-            self._walk_python_tree(
-                child, file, source_lines, chunks, parent_symbol
-            )
+            self._walk_python_tree(child, file, source_lines, chunks, parent_symbol)
 
     @staticmethod
     def _get_python_class_name(node) -> str | None:
@@ -367,9 +365,7 @@ class JavaChunker(LanguageChunker):
 
         # Continue walking
         for child in node.children:
-            self._walk_java_tree(
-                child, file, source_lines, chunks, parent_symbol
-            )
+            self._walk_java_tree(child, file, source_lines, chunks, parent_symbol)
 
     @staticmethod
     def _get_java_class_name(node) -> str | None:
@@ -394,6 +390,182 @@ class JavaChunker(LanguageChunker):
             if child.type == "modifier" and child.text == b"public":
                 return True
         return False
+
+
+class GoChunker(LanguageChunker):
+    """Chunker for Go source code."""
+
+    def chunk(
+        self,
+        file: FileMetadata,
+        tree: SyntaxTree,
+        source_lines: list[str],
+    ) -> list[Chunk]:
+        chunks = []
+        self._walk_go_tree(tree.root, file, source_lines, chunks)
+        return chunks
+
+    def _walk_go_tree(
+        self,
+        node,
+        file: FileMetadata,
+        source_lines: list[str],
+        chunks: list[Chunk],
+        parent_symbol: str | None = None,
+    ) -> None:
+        if not hasattr(node, "type"):
+            return
+
+        node_type = node.type
+
+        if node_type == "type_declaration":
+            for child in node.children:
+                if child.type == "type_spec":
+                    name = self._get_go_type_name(child)
+                    if name:
+                        start_line = node.start_point[0] + 1
+                        end_line = node.end_point[0] + 1
+                        code = self._extract_lines(source_lines, start_line, end_line)
+                        chunk_id = self._generate_chunk_id(file.path, name, start_line)
+                        chunks.append(
+                            Chunk(
+                                chunk_id=chunk_id,
+                                path=file.path,
+                                language=file.language.value,
+                                start_line=start_line,
+                                end_line=end_line,
+                                symbol=name,
+                                symbol_kind=ChunkKind.CLASS,
+                                parent_symbol=parent_symbol,
+                                code=code,
+                            )
+                        )
+                        parent_symbol = name
+
+        elif node_type == "function_declaration":
+            func_name = self._get_go_func_name(node)
+            if func_name:
+                start_line = node.start_point[0] + 1
+                end_line = node.end_point[0] + 1
+                code = self._extract_lines(source_lines, start_line, end_line)
+                chunk_id = self._generate_chunk_id(file.path, func_name, start_line)
+                chunks.append(
+                    Chunk(
+                        chunk_id=chunk_id,
+                        path=file.path,
+                        language=file.language.value,
+                        start_line=start_line,
+                        end_line=end_line,
+                        symbol=func_name,
+                        symbol_kind=ChunkKind.FUNCTION,
+                        parent_symbol=parent_symbol,
+                        code=code,
+                    )
+                )
+
+        for child in node.children:
+            self._walk_go_tree(child, file, source_lines, chunks, parent_symbol)
+
+    @staticmethod
+    def _get_go_func_name(node) -> str | None:
+        for child in node.children:
+            if child.type == "identifier":
+                return child.text.decode("utf-8")
+        return None
+
+    @staticmethod
+    def _get_go_type_name(node) -> str | None:
+        for child in node.children:
+            if child.type == "type_identifier":
+                return child.text.decode("utf-8")
+        return None
+
+
+class RustChunker(LanguageChunker):
+    """Chunker for Rust source code."""
+
+    def chunk(
+        self,
+        file: FileMetadata,
+        tree: SyntaxTree,
+        source_lines: list[str],
+    ) -> list[Chunk]:
+        chunks = []
+        self._walk_rust_tree(tree.root, file, source_lines, chunks)
+        return chunks
+
+    def _walk_rust_tree(
+        self,
+        node,
+        file: FileMetadata,
+        source_lines: list[str],
+        chunks: list[Chunk],
+        parent_symbol: str | None = None,
+    ) -> None:
+        if not hasattr(node, "type"):
+            return
+
+        node_type = node.type
+
+        if node_type == "struct_item":
+            struct_name = self._get_rust_type_name(node)
+            if struct_name:
+                start_line = node.start_point[0] + 1
+                end_line = node.end_point[0] + 1
+                code = self._extract_lines(source_lines, start_line, end_line)
+                chunk_id = self._generate_chunk_id(file.path, struct_name, start_line)
+                chunks.append(
+                    Chunk(
+                        chunk_id=chunk_id,
+                        path=file.path,
+                        language=file.language.value,
+                        start_line=start_line,
+                        end_line=end_line,
+                        symbol=struct_name,
+                        symbol_kind=ChunkKind.CLASS,
+                        parent_symbol=parent_symbol,
+                        code=code,
+                    )
+                )
+                parent_symbol = struct_name
+
+        elif node_type == "function_item":
+            func_name = self._get_rust_func_name(node)
+            if func_name:
+                start_line = node.start_point[0] + 1
+                end_line = node.end_point[0] + 1
+                code = self._extract_lines(source_lines, start_line, end_line)
+                chunk_id = self._generate_chunk_id(file.path, func_name, start_line)
+                chunks.append(
+                    Chunk(
+                        chunk_id=chunk_id,
+                        path=file.path,
+                        language=file.language.value,
+                        start_line=start_line,
+                        end_line=end_line,
+                        symbol=func_name,
+                        symbol_kind=ChunkKind.FUNCTION,
+                        parent_symbol=parent_symbol,
+                        code=code,
+                    )
+                )
+
+        for child in node.children:
+            self._walk_rust_tree(child, file, source_lines, chunks, parent_symbol)
+
+    @staticmethod
+    def _get_rust_func_name(node) -> str | None:
+        for child in node.children:
+            if child.type == "identifier":
+                return child.text.decode("utf-8")
+        return None
+
+    @staticmethod
+    def _get_rust_type_name(node) -> str | None:
+        for child in node.children:
+            if child.type == "type_identifier":
+                return child.text.decode("utf-8")
+        return None
 
 
 class JavaScriptChunker(LanguageChunker):
@@ -524,9 +696,7 @@ class JavaScriptChunker(LanguageChunker):
 
         # Continue walking
         for child in node.children:
-            self._walk_js_tree(
-                child, file, source_lines, chunks, parent_symbol
-            )
+            self._walk_js_tree(child, file, source_lines, chunks, parent_symbol)
 
     @staticmethod
     def _get_js_class_name(node) -> str | None:
@@ -571,6 +741,8 @@ class Chunker:
             "java": JavaChunker(token_budget),
             "javascript": JavaScriptChunker(token_budget),
             "typescript": JavaScriptChunker(token_budget),
+            "go": GoChunker(token_budget),
+            "rust": RustChunker(token_budget),
         }
 
     def chunk(

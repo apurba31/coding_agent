@@ -4,9 +4,9 @@ import json
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any
 
-from .models import Conversation, Message, MessageRole, ConversationStats
+from .models import Conversation, Message, MessageRole
 
 
 class ConversationStore:
@@ -23,7 +23,7 @@ class ConversationStore:
         self._conversations: dict[str, Conversation] = {}
 
     def create_conversation(
-        self, conversation_id: Optional[str] = None, title: Optional[str] = None
+        self, conversation_id: str | None = None, title: str | None = None
     ) -> Conversation:
         """Create a new conversation.
 
@@ -42,7 +42,7 @@ class ConversationStore:
         self._conversations[conv_id] = conversation
         return conversation
 
-    def get_conversation(self, conversation_id: str) -> Optional[Conversation]:
+    def get_conversation(self, conversation_id: str) -> Conversation | None:
         """Get conversation by ID."""
         return self._conversations.get(conversation_id)
 
@@ -69,15 +69,17 @@ class ConversationStore:
         result = []
         for conv_id, conv in self._conversations.items():
             stats = conv.compute_stats()
-            result.append({
-                "conversation_id": conv_id,
-                "title": conv.title or f"Conversation {conv_id[:8]}",
-                "created_at": conv.created_at.isoformat(),
-                "updated_at": conv.updated_at.isoformat(),
-                "message_count": stats.total_messages,
-                "user_turns": stats.total_user_turns,
-                "assistant_turns": stats.total_assistant_turns,
-            })
+            result.append(
+                {
+                    "conversation_id": conv_id,
+                    "title": conv.title or f"Conversation {conv_id[:8]}",
+                    "created_at": conv.created_at.isoformat(),
+                    "updated_at": conv.updated_at.isoformat(),
+                    "message_count": stats.total_messages,
+                    "user_turns": stats.total_user_turns,
+                    "assistant_turns": stats.total_assistant_turns,
+                }
+            )
         return result
 
     def save_conversation(self, conversation_id: str) -> bool:
@@ -98,7 +100,7 @@ class ConversationStore:
             json.dump(conversation.to_dict(), f, indent=2)
         return True
 
-    def load_conversation(self, conversation_id: str) -> Optional[Conversation]:
+    def load_conversation(self, conversation_id: str) -> Conversation | None:
         """Load conversation from disk.
 
         Args:
@@ -112,7 +114,7 @@ class ConversationStore:
             return None
 
         try:
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 data = json.load(f)
 
             conversation = Conversation(
@@ -157,17 +159,17 @@ class ConversationStore:
 class ConversationManager:
     """High-level manager for active conversations."""
 
-    def __init__(self, store: Optional[ConversationStore] = None):
+    def __init__(self, store: ConversationStore | None = None):
         """Initialize conversation manager.
 
         Args:
             store: ConversationStore instance. If None, creates default.
         """
         self.store = store or ConversationStore()
-        self._active_conversation: Optional[str] = None
+        self._active_conversation: str | None = None
 
     def start_conversation(
-        self, conversation_id: Optional[str] = None, title: Optional[str] = None
+        self, conversation_id: str | None = None, title: str | None = None
     ) -> Conversation:
         """Start a new conversation.
 
@@ -182,13 +184,13 @@ class ConversationManager:
         self._active_conversation = conversation.conversation_id
         return conversation
 
-    def get_active_conversation(self) -> Optional[Conversation]:
+    def get_active_conversation(self) -> Conversation | None:
         """Get the currently active conversation."""
         if self._active_conversation:
             return self.store.get_conversation(self._active_conversation)
         return None
 
-    def switch_conversation(self, conversation_id: str) -> Optional[Conversation]:
+    def switch_conversation(self, conversation_id: str) -> Conversation | None:
         """Switch to a different conversation.
 
         Args:
@@ -202,7 +204,7 @@ class ConversationManager:
             self._active_conversation = conversation_id
         return conversation
 
-    def add_user_message(self, content: str) -> Optional[Message]:
+    def add_user_message(self, content: str) -> Message | None:
         """Add a user message to active conversation.
 
         Args:
@@ -217,8 +219,8 @@ class ConversationManager:
         return conv.add_message(MessageRole.USER, content)
 
     def add_assistant_message(
-        self, content: str, tool_calls: Optional[list] = None, tool_results: Optional[list] = None
-    ) -> Optional[Message]:
+        self, content: str, tool_calls: list | None = None, tool_results: list | None = None
+    ) -> Message | None:
         """Add an assistant message to active conversation.
 
         Args:
@@ -251,7 +253,7 @@ class ConversationManager:
         conv = self.get_active_conversation()
         return conv.get_context_window(max_messages) if conv else []
 
-    def get_conversation_summary(self, conversation_id: Optional[str] = None) -> dict[str, Any]:
+    def get_conversation_summary(self, conversation_id: str | None = None) -> dict[str, Any]:
         """Get summary of a conversation.
 
         Args:

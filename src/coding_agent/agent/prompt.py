@@ -1,4 +1,5 @@
 """Prompt builder and tool schema conversion."""
+
 from typing import Any
 
 from coding_agent.tools.models import ToolDefinition
@@ -10,7 +11,7 @@ class PromptBuilder:
 
     def __init__(self, system_prompt: str):
         """Initialize PromptBuilder with a base system prompt.
-        
+
         Args:
             system_prompt: The base system instruction for the agent.
         """
@@ -23,12 +24,12 @@ class PromptBuilder:
         context: str | None = None,
     ) -> list[dict[str, Any]]:
         """Build messages with optional conversation history and retrieved code context.
-        
+
         Args:
             goal: The task or goal for the agent.
             history: Prior API-compatible messages, including the current user turn if present.
             context: Relevant repository context to add to the system instruction.
-            
+
         Returns:
             Initial list of messages.
         """
@@ -47,10 +48,10 @@ class PromptBuilder:
 
     def convert_tool_to_openai_schema(self, tool_def: ToolDefinition) -> dict[str, Any]:
         """Convert a ToolDefinition to the OpenAI/Groq tool format.
-        
+
         Args:
             tool_def: The internal tool definition.
-            
+
         Returns:
             Dictionary formatted as an OpenAI function tool.
         """
@@ -79,7 +80,7 @@ class PromptBuilder:
                 prop["default"] = param.default
 
             properties[param.name] = prop
-            
+
             if param.required:
                 required.append(param.name)
 
@@ -98,10 +99,10 @@ class PromptBuilder:
 
     def get_tool_schemas(self, registry: ToolRegistry) -> list[dict[str, Any]]:
         """Get all tool schemas in OpenAI/Groq format from a registry.
-        
+
         Args:
             registry: The ToolRegistry instance containing registered tools.
-            
+
         Returns:
             List of tool schemas.
         """

@@ -26,4 +26,5 @@ class EmbeddingResult:
     def norm(self) -> float:
         """Calculate L2 norm of vector."""
         import math
+
         return math.sqrt(sum(x**2 for x in self.vector))

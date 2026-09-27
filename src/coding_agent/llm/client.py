@@ -1,13 +1,15 @@
 """Groq LLM client."""
+
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from groq import Groq
 
 
 class GroqClient:
     """Client for interacting with the Groq API."""
 
-    def __init__(self, api_key: Optional[str] = None, default_model: str = "llama3-70b-8192"):
+    def __init__(self, api_key: str | None = None, default_model: str = "llama3-70b-8192"):
         """Initialize the Groq client.
 
         Args:
@@ -23,9 +25,9 @@ class GroqClient:
 
     def generate_response(
         self,
-        messages: List[Dict[str, Any]],
-        model: Optional[str] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict = "auto",
         temperature: float = 0.0,
     ) -> Any:
@@ -43,7 +45,7 @@ class GroqClient:
         """
         model_to_use = model or self.default_model
 
-        kwargs: Dict[str, Any] = {
+        kwargs: dict[str, Any] = {
             "model": model_to_use,
             "messages": messages,
             "temperature": temperature,

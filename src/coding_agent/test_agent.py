@@ -1,12 +1,14 @@
-import os
 import logging
-from coding_agent.llm.client import GroqClient
-from coding_agent.agent.prompt import PromptBuilder
+import os
+
 from coding_agent.agent.executor import AgentExecutor
-from coding_agent.tools.registry import ToolRegistry
+from coding_agent.agent.prompt import PromptBuilder
+from coding_agent.llm.client import GroqClient
 from coding_agent.tools.models import ToolParameter
+from coding_agent.tools.registry import ToolRegistry
 
 logging.basicConfig(level=logging.INFO)
+
 
 def example_calculator(a: float, b: float, operation: str) -> float:
     """A simple calculator tool for testing the agent."""
@@ -20,6 +22,7 @@ def example_calculator(a: float, b: float, operation: str) -> float:
         return a / b
     else:
         raise ValueError(f"Unknown operation: {operation}")
+
 
 def main():
     # Make sure to have GROQ_API_KEY in the environment
@@ -37,7 +40,13 @@ def main():
         parameters=[
             ToolParameter(name="a", type="number", description="The first number", required=True),
             ToolParameter(name="b", type="number", description="The second number", required=True),
-            ToolParameter(name="operation", type="string", description="The operation to perform", enum=["add", "subtract", "multiply", "divide"], required=True),
+            ToolParameter(
+                name="operation",
+                type="string",
+                description="The operation to perform",
+                enum=["add", "subtract", "multiply", "divide"],
+                required=True,
+            ),
         ],
         return_type="number",
     )
@@ -58,7 +67,7 @@ def main():
     goal = "What is 15.5 multiplied by 4, and then subtract 10 from the result?"
     print(f"\n--- Goal: {goal} ---\n")
     state = executor.execute(goal)
-    
+
     print("\n--- Final Status ---")
     print(state["status"])
     print("\n--- Messages History ---")
@@ -66,6 +75,7 @@ def main():
         print(f"[{msg['role'].upper()}]: {msg.get('content', 'No Content (Tool call likely)')}")
         if "tool_calls" in msg:
             print("  Tools calls:", msg["tool_calls"])
+
 
 if __name__ == "__main__":
     main()

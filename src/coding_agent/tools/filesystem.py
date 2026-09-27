@@ -20,7 +20,9 @@ class RepositoryToolbox:
         try:
             target.relative_to(self.root)
         except ValueError as exc:
-            raise ValueError(f"Requested path is outside the repository: {relative_or_absolute}") from exc
+            raise ValueError(
+                f"Requested path is outside the repository: {relative_or_absolute}"
+            ) from exc
         return target
 
     def read_file(self, path: str | Path) -> str:

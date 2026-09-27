@@ -1,4 +1,5 @@
 """Tests for hash-based incremental repository indexing."""
+
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -148,9 +149,7 @@ def test_failed_changed_file_keeps_old_hash_and_is_retried(tmp_path):
     indexer = RepositoryIndexer(embedder, db)
     indexer.index(repo)
     manifest_path = Path(db.uri) / "index_manifest.json"
-    old_hash = json.loads(manifest_path.read_text(encoding="utf-8"))["file_hashes"][
-        "module.py"
-    ]
+    old_hash = json.loads(manifest_path.read_text(encoding="utf-8"))["file_hashes"]["module.py"]
 
     class FailOnceParser:
         def __init__(self):
@@ -178,6 +177,4 @@ def test_failed_changed_file_keeps_old_hash_and_is_retried(tmp_path):
     assert retried.parsed_files == 1
     assert retried.chunks == 1
     assert db.count() == 1
-    assert any(
-        record["code"].endswith("return 2") for record in _records(db, embedder)
-    )
+    assert any(record["code"].endswith("return 2") for record in _records(db, embedder))

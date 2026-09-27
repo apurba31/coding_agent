@@ -1,4 +1,5 @@
 """Tests for prompt construction and the agent orchestration loop."""
+
 from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
@@ -83,10 +84,12 @@ def test_agent_executes_tool_then_returns_final_answer():
     )
     registry = ToolRegistry()
     registry.register("echo", lambda text: text.upper(), "Uppercase text")
-    llm = FakeLLM([
-        _response(tool_calls=[tool_call]),
-        _response(content="The tool returned HELLO."),
-    ])
+    llm = FakeLLM(
+        [
+            _response(tool_calls=[tool_call]),
+            _response(content="The tool returned HELLO."),
+        ]
+    )
 
     state = _executor(llm, registry).execute("Echo hello")
 

@@ -1,11 +1,11 @@
 """Data models for code chunks."""
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 
-class ChunkKind(str, Enum):
+class ChunkKind(StrEnum):
     """Types of code chunks."""
 
     CLASS = "class"

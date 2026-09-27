@@ -2,12 +2,13 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-from typing import Optional, Any
+from enum import StrEnum
+from typing import Any
 
 
-class MessageRole(str, Enum):
+class MessageRole(StrEnum):
     """Role of message sender."""
+
     USER = "user"
     ASSISTANT = "assistant"
     SYSTEM = "system"
@@ -17,14 +18,15 @@ class MessageRole(str, Enum):
 @dataclass
 class Message:
     """Represents a single message in a conversation."""
+
     role: MessageRole
     content: str
     timestamp: datetime = field(default_factory=datetime.now)
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     # Optional: Tool-related fields
-    tool_calls: Optional[list[dict[str, Any]]] = None
-    tool_results: Optional[list[dict[str, Any]]] = None
+    tool_calls: list[dict[str, Any]] | None = None
+    tool_results: list[dict[str, Any]] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization or LLM consumption."""
@@ -41,6 +43,7 @@ class Message:
 @dataclass
 class ConversationStats:
     """Statistics about a conversation."""
+
     total_messages: int = 0
     total_user_turns: int = 0
     total_assistant_turns: int = 0
@@ -52,8 +55,9 @@ class ConversationStats:
 @dataclass
 class Conversation:
     """Represents a multi-turn conversation."""
+
     conversation_id: str
-    title: Optional[str] = None
+    title: str | None = None
     messages: list[Message] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
@@ -82,7 +86,7 @@ class Conversation:
         return message
 
     def get_messages(
-        self, limit: Optional[int] = None, role_filter: Optional[MessageRole] = None
+        self, limit: int | None = None, role_filter: MessageRole | None = None
     ) -> list[Message]:
         """Get messages with optional filtering.
 
@@ -142,9 +146,7 @@ class Conversation:
         if not self.messages:
             return stats
 
-        stats.total_user_turns = len(
-            [m for m in self.messages if m.role == MessageRole.USER]
-        )
+        stats.total_user_turns = len([m for m in self.messages if m.role == MessageRole.USER])
         stats.total_assistant_turns = len(
             [m for m in self.messages if m.role == MessageRole.ASSISTANT]
         )

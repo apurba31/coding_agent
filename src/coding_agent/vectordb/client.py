@@ -94,9 +94,7 @@ class LanceDBClient:
             mode: Write mode ('append' or 'overwrite').
         """
         if len(chunks) != len(vectors):
-            raise ValueError(
-                f"Mismatch: received {len(chunks)} chunks and {len(vectors)} vectors"
-            )
+            raise ValueError(f"Mismatch: received {len(chunks)} chunks and {len(vectors)} vectors")
 
         records = [chunk_to_record(c, v) for c, v in zip(chunks, vectors, strict=False)]
         self.add_records(records, table_name=table_name, mode=mode)
@@ -133,12 +131,9 @@ class LanceDBClient:
     ) -> None:
         """Upsert chunks and embeddings using each deterministic chunk ID."""
         if len(chunks) != len(vectors):
-            raise ValueError(
-                f"Mismatch: received {len(chunks)} chunks and {len(vectors)} vectors"
-            )
+            raise ValueError(f"Mismatch: received {len(chunks)} chunks and {len(vectors)} vectors")
         records = [
-            chunk_to_record(chunk, vector)
-            for chunk, vector in zip(chunks, vectors, strict=True)
+            chunk_to_record(chunk, vector) for chunk, vector in zip(chunks, vectors, strict=True)
         ]
         self.upsert_records(records, table_name=table_name)
 

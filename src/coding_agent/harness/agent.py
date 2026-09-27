@@ -1,37 +1,47 @@
 import json
 import os
-from typing import Callable, Dict, List, TypedDict
+from collections.abc import Callable
+from typing import TypedDict
+
 
 # 1. DEFINE THE STATE SCHEMA
 class AgentState(TypedDict):
     goal: str
-    messages: List[Dict[str, str]]
+    messages: list[dict[str, str]]
     step_count: int
     max_steps: int
     status: str  # "RUNNING", "SUCCESS", "FAILED"
+
 
 # 2. DEFINE A SIMPLE TOOL REGISTRY
 def tool_read_file(filepath: str) -> str:
     """Reads a local file."""
     try:
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             return f.read()
     except Exception as e:
         return f"Error reading file: {e}"
 
-TOOL_REGISTRY: Dict[str, Callable] = {
-    "read_file": tool_read_file
-}
+
+TOOL_REGISTRY: dict[str, Callable] = {"read_file": tool_read_file}
+
 
 # 3. THE HARNESS LOOP & STATE MACHINE
 class NanoHarness:
     def __init__(self, goal: str, max_steps: int = 5):
         self.state: AgentState = {
             "goal": goal,
-            "messages": [{"role": "system", "content": "You are a focused coding agent. Accomplish the goal using available tools."}],
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a focused coding agent. Accomplish the goal using available tools."
+                    ),
+                }
+            ],
             "step_count": 0,
             "max_steps": max_steps,
-            "status": "RUNNING"
+            "status": "RUNNING",
         }
 
     def checkpoint(self):
@@ -58,13 +68,13 @@ class NanoHarness:
         if self.state["step_count"] == 1:
             action = {"tool": "read_file", "args": {"filepath": "sample.txt"}}
             print(f"[Model Decision] Calling tool: {action['tool']} with {action['args']}")
-            
+
             # Execute Tool
             tool_output = TOOL_REGISTRY[action["tool"]](**action["args"])
             print(f"[Tool Output] {tool_output}")
 
             # Append to state history
-            self.state["messages"].append({"role": "assistant", "content": f"Used tool read_file"})
+            self.state["messages"].append({"role": "assistant", "content": "Used tool read_file"})
             self.state["messages"].append({"role": "tool", "content": tool_output})
         else:
             # Model finishes task
@@ -78,6 +88,7 @@ class NanoHarness:
         while self.state["status"] == "RUNNING":
             self.step()
         print(f"\n[Harness Finished] Final Status: {self.state['status']}")
+
 
 # --- EXECUTION ---
 if __name__ == "__main__":

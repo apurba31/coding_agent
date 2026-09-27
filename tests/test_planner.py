@@ -1,4 +1,5 @@
 """Tests for deterministic planner decisions and executor route enforcement."""
+
 from types import SimpleNamespace
 
 from coding_agent.agent.executor import AgentExecutor
@@ -57,7 +58,7 @@ class CountingRetriever:
 
 
 def test_executor_skips_retrieval_and_tool_schemas_for_direct_plan():
-    llm = FakeLLM([_response(content="Recursion calls itself." )])
+    llm = FakeLLM([_response(content="Recursion calls itself.")])
     retriever = CountingRetriever()
     registry = ToolRegistry()
     registry.register("inspect", lambda: "inspected", "Inspect repository")

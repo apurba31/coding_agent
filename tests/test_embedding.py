@@ -263,9 +263,7 @@ def helper_function():
         result2 = embedder.embed_text(chunk2)
 
         # Calculate cosine similarity
-        dot_product = sum(
-            a * b for a, b in zip(result1.vector, result2.vector, strict=True)
-        )
+        dot_product = sum(a * b for a, b in zip(result1.vector, result2.vector, strict=True))
         # Should be reasonably similar (deterministic, but different)
         assert -1.0 <= dot_product <= 1.0
 
