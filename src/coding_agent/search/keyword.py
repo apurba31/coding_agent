@@ -1,10 +1,12 @@
 """BM25 Keyword Search implementation."""
 
 import re
-from typing import List
 
 from rank_bm25 import BM25Plus
+
 from coding_agent.chunker.models import Chunk
+from coding_agent.observability import MetricsCollector, get_metrics_collector
+
 from .models import SearchResult
 
 
@@ -12,8 +14,8 @@ class CodeTokenizer:
     """A sensible code-aware tokenizer."""
 
     @staticmethod
-    def tokenize(text: str) -> List[str]:
-        """Tokenize code text, splitting CamelCase, snake_case, etc., while retaining original identifiers."""
+    def tokenize(text: str) -> list[str]:
+        """Split code identifiers while retaining original identifier forms."""
         if not text:
             return []
 
@@ -36,7 +38,7 @@ class CodeTokenizer:
                         tokens.add(part.lower())
 
             # Split CamelCase and PascalCase
-            # matches boundaries between lowercase and uppercase, and uppercase followed by lowercase
+            # Match lower-to-upper and acronym-to-word CamelCase boundaries.
             camel_parts = re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z][a-z]|\d|\W|$)|\d+', word)
             if len(camel_parts) > 1:
                 for part in camel_parts:
@@ -50,8 +52,13 @@ class CodeTokenizer:
 class BM25Searcher:
     """Keyword searcher using rank-bm25."""
 
-    def __init__(self, chunks: List[Chunk]):
+    def __init__(
+        self,
+        chunks: list[Chunk],
+        metrics: MetricsCollector | None = None,
+    ):
         self.chunks = chunks
+        self.metrics = metrics or get_metrics_collector()
         self.tokenized_corpus = [self._tokenize_chunk(chunk) for chunk in chunks]
         
         if self.tokenized_corpus:
@@ -59,7 +66,7 @@ class BM25Searcher:
         else:
             self.bm25 = None
 
-    def _tokenize_chunk(self, chunk: Chunk) -> List[str]:
+    def _tokenize_chunk(self, chunk: Chunk) -> list[str]:
         """Convert a chunk into a list of tokens for the BM25 corpus."""
         corpus_text = [
             chunk.symbol,
@@ -83,24 +90,31 @@ class BM25Searcher:
         full_text = " ".join(corpus_text)
         return CodeTokenizer.tokenize(full_text)
 
-    def search(self, query: str, top_k: int) -> List[SearchResult]:
+    def search(self, query: str, top_k: int) -> list[SearchResult]:
         """Rank documents based on BM25 and return the top_k results."""
         if not self.bm25 or not self.chunks:
             return []
-            
-        tokenized_query = CodeTokenizer.tokenize(query)
-        scores = self.bm25.get_scores(tokenized_query)
+
+        with self.metrics.measure("search.bm25"):
+            tokenized_query = CodeTokenizer.tokenize(query)
+            scores = self.bm25.get_scores(tokenized_query)
         
         results = []
         for i, score in enumerate(scores):
             # BM25Plus scores are strictly positive if there is any match
             if score > 0:
-                results.append(SearchResult(
-                    chunk=self.chunks[i],
-                    score=score,
-                    chunk_id=self.chunks[i].chunk_id
-                ))
+                results.append(
+                    SearchResult(
+                        chunk=self.chunks[i],
+                        score=score,
+                        chunk_id=self.chunks[i].chunk_id,
+                        bm25_score=score,
+                        semantic_score=None,
+                        final_score=None,
+                    )
+                )
                 
         # Sort by score descending
         results.sort(key=lambda x: x.score, reverse=True)
+        self.metrics.observe("search.bm25.results", len(results[:top_k]))
         return results[:top_k]

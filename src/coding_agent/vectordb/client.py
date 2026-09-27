@@ -2,10 +2,12 @@
 
 from pathlib import Path
 from typing import Any
+
 import lancedb
 
 from ..chunker.models import Chunk
-from .schema import get_chunk_schema, chunk_to_record
+from ..observability import MetricsCollector, get_metrics_collector
+from .schema import chunk_to_record, get_chunk_schema
 
 
 class LanceDBClient:
@@ -17,6 +19,7 @@ class LanceDBClient:
         self,
         uri: str | Path = ".mini-agent/lancedb",
         dimension: int = 384,
+        metrics: MetricsCollector | None = None,
     ) -> None:
         """Initialize LanceDB client.
 
@@ -26,6 +29,7 @@ class LanceDBClient:
         """
         self.uri = str(uri)
         self.dimension = dimension
+        self.metrics = metrics or get_metrics_collector()
         self._db: lancedb.DBConnection | None = None
 
     @property
@@ -97,12 +101,65 @@ class LanceDBClient:
         records = [chunk_to_record(c, v) for c, v in zip(chunks, vectors, strict=False)]
         self.add_records(records, table_name=table_name, mode=mode)
 
+    def upsert_records(
+        self,
+        records: list[dict[str, Any]],
+        table_name: str = DEFAULT_TABLE_NAME,
+    ) -> None:
+        """Insert records or replace existing rows by deterministic chunk ID."""
+        if not records:
+            return
+
+        schema = get_chunk_schema(dimension=self.dimension)
+        if table_name not in self.db.table_names():
+            with self.metrics.measure("vector.upsert"):
+                self.db.create_table(table_name, data=records, schema=schema)
+            return
+
+        table = self.db.open_table(table_name)
+        with self.metrics.measure("vector.upsert"):
+            (
+                table.merge_insert("chunk_id")
+                .when_matched_update_all()
+                .when_not_matched_insert_all()
+                .execute(records)
+            )
+
+    def upsert_chunks(
+        self,
+        chunks: list[Chunk],
+        vectors: list[list[float]],
+        table_name: str = DEFAULT_TABLE_NAME,
+    ) -> None:
+        """Upsert chunks and embeddings using each deterministic chunk ID."""
+        if len(chunks) != len(vectors):
+            raise ValueError(
+                f"Mismatch: received {len(chunks)} chunks and {len(vectors)} vectors"
+            )
+        records = [
+            chunk_to_record(chunk, vector)
+            for chunk, vector in zip(chunks, vectors, strict=True)
+        ]
+        self.upsert_records(records, table_name=table_name)
+
+    def delete_by_path(
+        self,
+        path: str | Path,
+        table_name: str = DEFAULT_TABLE_NAME,
+    ) -> None:
+        """Delete every indexed chunk belonging to one repository-relative path."""
+        if table_name not in self.db.table_names():
+            return
+        safe_path = str(path).replace("'", "''")
+        self.db.open_table(table_name).delete(f"path = '{safe_path}'")
+
     def count(self, table_name: str = DEFAULT_TABLE_NAME) -> int:
         """Return total number of rows in the table."""
-        if table_name not in self.db.table_names():
-            return 0
-        table = self.db.open_table(table_name)
-        return len(table)
+        with self.metrics.measure("vector.count"):
+            if table_name not in self.db.table_names():
+                return 0
+            table = self.db.open_table(table_name)
+            return len(table)
 
     def search(
         self,
@@ -125,12 +182,14 @@ class LanceDBClient:
         if table_name not in self.db.table_names():
             return []
 
-        table = self.db.open_table(table_name)
-        query = table.search(query_vector).limit(limit)
-        if where:
-            query = query.where(where)
+        with self.metrics.measure("vector.search"):
+            table = self.db.open_table(table_name)
+            query = table.search(query_vector).limit(limit)
+            if where:
+                query = query.where(where)
 
-        results = query.to_list()
+            results = query.to_list()
+        self.metrics.observe("vector.search.results", len(results))
         return results
 
     def drop_table(self, table_name: str = DEFAULT_TABLE_NAME) -> None:

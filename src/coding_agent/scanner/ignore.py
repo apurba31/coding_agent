@@ -13,6 +13,7 @@ IGNORE_DIRECTORIES = {
     ".pytest_cache",
     ".ruff_cache",
     ".mypy_cache",
+    ".mini-agent",
 }
 
 IGNORE_EXTENSIONS = {

@@ -1,7 +1,8 @@
 """Schema definitions and converters for storing code chunks in LanceDB."""
 
-from typing import Any
 from pathlib import Path
+from typing import Any
+
 import pyarrow as pa
 
 from ..chunker.models import Chunk, ChunkKind
@@ -44,12 +45,16 @@ def chunk_to_record(chunk: Chunk, vector: list[float]) -> dict[str, Any]:
     """
     return {
         "chunk_id": chunk.chunk_id,
-        "path": str(chunk.path),
+        "path": chunk.path.as_posix(),
         "language": chunk.language,
         "start_line": int(chunk.start_line),
         "end_line": int(chunk.end_line),
         "symbol": chunk.symbol,
-        "symbol_kind": chunk.symbol_kind.value if isinstance(chunk.symbol_kind, ChunkKind) else str(chunk.symbol_kind),
+        "symbol_kind": (
+            chunk.symbol_kind.value
+            if isinstance(chunk.symbol_kind, ChunkKind)
+            else str(chunk.symbol_kind)
+        ),
         "parent_symbol": chunk.parent_symbol if chunk.parent_symbol else None,
         "code": chunk.code,
         "docstring": chunk.docstring if chunk.docstring else None,

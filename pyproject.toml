@@ -33,6 +33,7 @@ dependencies = [
     ############################################################
 
     "groq~=0.31.0",
+    "langgraph~=1.2.0",
 
     ############################################################
     # Embeddings
@@ -165,7 +166,7 @@ docs = [
 
 [project.scripts]
 
-mini-agent = "src.app:main"
+mini-agent = "coding_agent.app:main"
 
 ############################################################
 # Black
@@ -211,6 +212,11 @@ profile = "black"
 
 pythonpath = [".", "src"]
 testpaths = ["tests"]
+markers = [
+    "integration: exercises multiple subsystems with local fixtures and services",
+    "requires_llm: requires live LLM credentials or network access",
+    "requires_model: loads a real embedding model",
+]
 
 ############################################################
 # Coverage
@@ -237,4 +243,4 @@ ignore_missing_imports = true
 
 [tool.hatch.build.targets.wheel]
 
-packages = ["src"]
+packages = ["src/coding_agent"]

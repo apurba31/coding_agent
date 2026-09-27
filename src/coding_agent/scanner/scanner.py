@@ -1,6 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 
+from coding_agent.observability import MetricsCollector, get_metrics_collector
+
 from ..models.file import FileMetadata
 from ..models.repository import Repository
 from ..utils.hashing import calculate_sha256
@@ -10,10 +12,22 @@ from .walker import DirectoryWalker
 
 
 class RepositoryScanner:
-    def __init__(self, root: Path):
+    def __init__(
+        self,
+        root: Path,
+        metrics: MetricsCollector | None = None,
+    ):
         self.walker = DirectoryWalker()
+        self.metrics = metrics or get_metrics_collector()
 
     def scan(self, root: Path) -> Repository:
+        with self.metrics.measure("scan"):
+            repository = self._scan(root)
+        self.metrics.increment("files.scanned", repository.indexed_files)
+        self.metrics.increment("files.ignored", repository.ignored_files)
+        return repository
+
+    def _scan(self, root: Path) -> Repository:
         files = []
         indexed = 0
         ignored = 0
@@ -24,7 +38,7 @@ class RepositoryScanner:
                 directories += 1
                 if path.name in IGNORE_DIRECTORIES:
                     ignored += 1
-                    continue
+                continue
 
             if path.suffix.lower() in IGNORE_EXTENSIONS:
                 ignored += 1

@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
 
 from coding_agent.models.ast import SyntaxTree
-from src.coding_agent.models.file import FileMetadata
+
+from ..models.file import FileMetadata
 
 
 class SourceParser(ABC):
