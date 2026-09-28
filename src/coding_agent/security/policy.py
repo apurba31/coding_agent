@@ -63,9 +63,7 @@ class SecurityPolicy:
         """Resolve a user-supplied path and reject anything outside the root."""
         candidate = Path(relative_or_absolute)
         target = (
-            candidate.resolve()
-            if candidate.is_absolute()
-            else (self.root / candidate).resolve()
+            candidate.resolve() if candidate.is_absolute() else (self.root / candidate).resolve()
         )
         try:
             target.relative_to(self.root)
