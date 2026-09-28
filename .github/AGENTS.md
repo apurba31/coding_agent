@@ -179,8 +179,7 @@ Use type hints throughout.
 Prefer:
 
 ```python
-def search(query: str, top_k: int = 10) -> list[SearchResult]:
-    ...
+def search(query: str, top_k: int = 10) -> list[SearchResult]: ...
 ```
 
 over untyped functions.
@@ -449,7 +448,7 @@ NEVER split source code arbitrarily by character count as the primary chunking s
 Do not do:
 
 ```python
-source[i:i+1000]
+source[i : i + 1000]
 ```
 
 for normal source-code chunks.
@@ -589,14 +588,11 @@ Create a generic interface:
 
 ```python
 class Embedder(ABC):
+    @abstractmethod
+    def embed_text(self, text: str) -> list[float]: ...
 
     @abstractmethod
-    def embed_text(self, text: str) -> list[float]:
-        ...
-
-    @abstractmethod
-    def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        ...
+    def embed_batch(self, texts: list[str]) -> list[list[float]]: ...
 ```
 
 The rest of the system must not depend directly on Sentence Transformers.
@@ -707,19 +703,15 @@ Create a repository-like abstraction:
 
 ```python
 class VectorStore(ABC):
+    def upsert(self, chunks: list[EmbeddedChunk]) -> None: ...
 
-    def upsert(self, chunks: list[EmbeddedChunk]) -> None:
-        ...
-
-    def delete(self, ids: list[str]) -> None:
-        ...
+    def delete(self, ids: list[str]) -> None: ...
 
     def search(
         self,
         vector: list[float],
         top_k: int,
-    ) -> list[SearchResult]:
-        ...
+    ) -> list[SearchResult]: ...
 ```
 
 Support:
@@ -1001,15 +993,13 @@ Define:
 
 ```python
 class Reranker(ABC):
-
     @abstractmethod
     def rerank(
         self,
         query: str,
         results: list[SearchResult],
         top_k: int,
-    ) -> list[SearchResult]:
-        ...
+    ) -> list[SearchResult]: ...
 ```
 
 Initially implement a simple score-based reranker.
@@ -1150,14 +1140,12 @@ Conceptually:
 
 ```python
 class LLMClient(ABC):
-
     @abstractmethod
     def complete(
         self,
         messages: list[Message],
         tools: list[ToolDefinition] | None = None,
-    ) -> LLMResponse:
-        ...
+    ) -> LLMResponse: ...
 ```
 
 Support:

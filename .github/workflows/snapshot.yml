@@ -18,7 +18,9 @@ jobs:
           python-version: "3.12"
 
       - name: Install ruff
-        run: pip install ruff
+        # Pin: unpinned `pip install ruff` pulled 0.16+, which formats
+        # Python fences inside .github/AGENTS.md and broke CI.
+        run: pip install "ruff==0.16.9"
 
       - name: Run ruff linter
         run: ruff check .
