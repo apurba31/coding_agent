@@ -18,7 +18,14 @@ from coding_agent.vectordb.client import LanceDBClient
 from .manifest import IndexManifest, IndexManifestStore
 
 logger = logging.getLogger(__name__)
-SUPPORTED_LANGUAGES = {Language.PYTHON, Language.JAVA, Language.JAVASCRIPT, Language.TYPESCRIPT}
+SUPPORTED_LANGUAGES = {
+    Language.PYTHON,
+    Language.JAVA,
+    Language.JAVASCRIPT,
+    Language.TYPESCRIPT,
+    Language.GO,
+    Language.RUST,
+}
 
 
 @dataclass(frozen=True)

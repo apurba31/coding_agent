@@ -5,39 +5,57 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from coding_agent.security import SecurityPolicy
+
 
 class TerminalTool:
-    """Run shell commands while blocking dangerous shell metacharacters."""
+    """Run shell commands with timeout, output caps, and a destructive-command denylist."""
 
-    UNSAFE_TOKENS = {";", "&&", "||", "|", "*", "?", "<", ">", "`", "$"}
-
-    def __init__(self, cwd: str | Path | None = None):
+    def __init__(
+        self,
+        cwd: str | Path | None = None,
+        policy: SecurityPolicy | None = None,
+        timeout_seconds: float = 15.0,
+        max_output_bytes: int = 32_000,
+    ):
         self.cwd = str(Path(cwd).resolve()) if cwd is not None else None
-
-    def _is_safe(self, command: str) -> bool:
-        return not any(token in command for token in self.UNSAFE_TOKENS)
+        self.policy = policy or SecurityPolicy(cwd or Path("."), max_output_bytes=max_output_bytes)
+        self.timeout_seconds = timeout_seconds
 
     def run(self, command: str) -> dict[str, str | bool | int]:
-        if not self._is_safe(command):
+        allowed, reason = self.policy.allow_command(command)
+        if not allowed:
             return {
                 "success": False,
                 "exit_code": 1,
                 "stdout": "",
                 "stderr": "",
-                "error": "Command rejected: unsafe shell metacharacters are not allowed.",
+                "error": reason,
             }
-        completed = subprocess.run(
-            command,
-            shell=True,
-            cwd=self.cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        try:
+            completed = subprocess.run(
+                command,
+                shell=True,
+                cwd=self.cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=self.timeout_seconds,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "exit_code": 124,
+                "stdout": "",
+                "stderr": "",
+                "error": f"Command timed out after {self.timeout_seconds}s",
+            }
+        stdout = self.policy.clip_output(completed.stdout)
+        stderr = self.policy.clip_output(completed.stderr)
         return {
             "success": completed.returncode == 0,
             "exit_code": completed.returncode,
-            "stdout": completed.stdout,
-            "stderr": completed.stderr,
-            "error": "" if completed.returncode == 0 else completed.stderr or completed.stdout,
+            "stdout": stdout,
+            "stderr": stderr,
+            "error": "" if completed.returncode == 0 else stderr or stdout,
         }

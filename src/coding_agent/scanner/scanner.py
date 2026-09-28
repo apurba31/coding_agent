@@ -2,11 +2,19 @@ from datetime import datetime
 from pathlib import Path
 
 from coding_agent.observability import MetricsCollector, get_metrics_collector
+from coding_agent.security import SecurityPolicy
 
 from ..models.file import FileMetadata
 from ..models.repository import Repository
 from ..utils.hashing import calculate_sha256
-from .ignore import IGNORE_DIRECTORIES, IGNORE_EXTENSIONS
+from .ignore import (
+    IGNORE_DIRECTORIES,
+    IGNORE_EXTENSIONS,
+    IGNORE_FILENAMES,
+    load_gitignore_patterns,
+    looks_binary,
+    matches_gitignore,
+)
 from .language import detect_language
 from .walker import DirectoryWalker
 
@@ -32,6 +40,8 @@ class RepositoryScanner:
         indexed = 0
         ignored = 0
         directories = 0
+        gitignore_patterns = load_gitignore_patterns(root)
+        policy = SecurityPolicy(root)
 
         for path in self.walker.walk(root):
             if path.is_dir():
@@ -40,12 +50,20 @@ class RepositoryScanner:
                     ignored += 1
                 continue
 
-            if path.suffix.lower() in IGNORE_EXTENSIONS:
+            relative = path.relative_to(root)
+            if (
+                path.suffix.lower() in IGNORE_EXTENSIONS
+                or path.name in IGNORE_FILENAMES
+                or path.name.lower() in {name.lower() for name in IGNORE_FILENAMES}
+                or policy.is_secret_path(path)
+                or matches_gitignore(relative, gitignore_patterns)
+                or looks_binary(path)
+            ):
                 ignored += 1
                 continue
 
             metadata = FileMetadata(
-                path=path.relative_to(root),
+                path=relative,
                 absolute_path=path.resolve(),
                 extension=path.suffix,
                 language=detect_language(path.suffix),

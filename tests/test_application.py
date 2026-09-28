@@ -233,6 +233,9 @@ def test_chat_cli_runs_agent_and_persists_conversation(tmp_path, monkeypatch):
                 "find_definition",
                 "find_references",
                 "search_symbols",
+                    "list_directory",
+                    "git_status",
+                    "git_diff",
             }
             message = SimpleNamespace(content="It adds 42 to the value.", tool_calls=None)
             return SimpleNamespace(choices=[SimpleNamespace(message=message)])

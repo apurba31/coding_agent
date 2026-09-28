@@ -33,8 +33,13 @@ from coding_agent.scanner.scanner import RepositoryScanner
 from coding_agent.search.hybrid import HybridSearcher
 from coding_agent.search.keyword import BM25Searcher
 from coding_agent.search.semantic import SemanticSearcher
+from coding_agent.config import AgentConfig, get_config
+from coding_agent.security import SecurityPolicy
+from coding_agent.tools.filesystem import RepositoryToolbox
+from coding_agent.tools.git import GitToolbox
 from coding_agent.tools.models import ToolParameter
 from coding_agent.tools.registry import ToolRegistry
+from coding_agent.tools.terminal import TerminalTool
 from coding_agent.vectordb.client import LanceDBClient
 
 app = typer.Typer(no_args_is_help=True, help="Index and chat with a local code repository.")
@@ -44,11 +49,22 @@ DEFAULT_DB_PATH = Path(".mini-agent/lancedb")
 SYSTEM_PROMPT = """You are a careful coding assistant for the current repository.
 Use retrieved code context and available tools to ground answers. Never claim to
 have changed files; this agent currently provides read-only repository tools."""
-INDEXABLE_SUFFIXES = {".py", ".java", ".js", ".ts"}
+INDEXABLE_SUFFIXES = {".py", ".java", ".js", ".ts", ".go", ".rs"}
+
+
+def _settings() -> AgentConfig:
+    return get_config()
 
 
 def _make_embedder() -> SentenceTransformerEmbedder:
-    return SentenceTransformerEmbedder(EmbeddingConfig())
+    settings = _settings()
+    return SentenceTransformerEmbedder(
+        EmbeddingConfig(
+            model_name=settings.embedding_model,
+            device=settings.embedding_device,
+            batch_size=settings.embedding_batch_size,
+        )
+    )
 
 
 def _make_db_client(path: Path, dimension: int) -> LanceDBClient:
@@ -107,21 +123,29 @@ def create_coding_tools(
     repo: Path,
     retriever: HybridSearcher,
     navigation: NavigationIndex | None = None,
+    allow_write: bool = False,
+    allow_terminal: bool = False,
+    config: AgentConfig | None = None,
 ) -> ToolRegistry:
-    """Create read-only repository tools constrained to the selected root."""
+    """Create repository tools constrained to the selected root.
+
+    Read/search/git tools are always available. Write and terminal tools are
+    opt-in so the agent cannot edit files or run commands unless the operator
+    explicitly enables them.
+    """
+    settings = config or _settings()
     root = repo.resolve()
+    policy = SecurityPolicy(root, max_output_bytes=settings.terminal_max_output_bytes)
+    toolbox = RepositoryToolbox(root, policy=policy)
+    git_tools = GitToolbox(root)
     navigation = navigation or NavigationIndex(root, [])
     registry = ToolRegistry()
 
     def read_file(path: str) -> str:
-        target = (root / path).resolve()
-        try:
-            target.relative_to(root)
-        except ValueError as error:
-            raise ValueError("Requested path is outside the repository") from error
-        if not target.is_file():
-            raise FileNotFoundError(f"Not a file: {path}")
-        return target.read_text(encoding="utf-8", errors="replace")
+        return toolbox.read_file(path)
+
+    def list_directory(path: str = ".") -> str:
+        return "\n".join(toolbox.list_dir(path))
 
     def search_code(query: str, top_k: int = 5) -> str:
         results = retriever.search(query, top_k=max(1, min(top_k, 20)))
@@ -142,11 +166,31 @@ def create_coding_tools(
     def search_symbols(query: str, limit: int = 20) -> str:
         return _format_definitions(navigation.search_symbols(query, limit=limit))
 
+    def git_status() -> str:
+        return git_tools.status()
+
+    def git_diff() -> str:
+        return git_tools.diff() or "(no unstaged or staged differences)"
+
     registry.register(
         "read_file",
         read_file,
-        "Read a UTF-8 file from the repository.",
+        "Read a UTF-8 file from the repository. Secret files are blocked.",
         [ToolParameter("path", "Repository-relative file path", "string")],
+    )
+    registry.register(
+        "list_directory",
+        list_directory,
+        "List names in a repository directory (secret files are omitted).",
+        [
+            ToolParameter(
+                "path",
+                "Repository-relative directory",
+                "string",
+                required=False,
+                default=".",
+            )
+        ],
     )
     registry.register(
         "search_code",
@@ -183,6 +227,59 @@ def create_coding_tools(
             ToolParameter("limit", "Maximum definitions", "integer", required=False, default=20),
         ],
     )
+    registry.register(
+        "git_status",
+        git_status,
+        "Show git status for the repository working tree.",
+        [],
+    )
+    registry.register(
+        "git_diff",
+        git_diff,
+        "Show staged and unstaged git diffs for the repository.",
+        [],
+    )
+    if allow_write:
+
+        def write_file(path: str, content: str) -> str:
+            return toolbox.write_file(path, content)
+
+        registry.register(
+            "write_file",
+            write_file,
+            "Write UTF-8 content to a path inside the repository. Secret files are blocked.",
+            [
+                ToolParameter("path", "Repository-relative file path", "string"),
+                ToolParameter("content", "Full file contents to write", "string"),
+            ],
+        )
+    if allow_terminal:
+        terminal = TerminalTool(
+            cwd=root,
+            policy=policy,
+            timeout_seconds=settings.terminal_timeout_seconds,
+            max_output_bytes=settings.terminal_max_output_bytes,
+        )
+
+        def run_terminal(command: str) -> str:
+            result = terminal.run(command)
+            return (
+                f"exit_code={result['exit_code']}\n"
+                f"stdout:\n{result['stdout']}\n"
+                f"stderr:\n{result['stderr']}\n"
+                f"error:\n{result['error']}"
+            )
+
+        registry.register(
+            "run_terminal",
+            run_terminal,
+            "Run a non-destructive shell command in the repository root with a timeout.",
+            [
+                ToolParameter(
+                    "command", "Shell command (no pipes, redirects, or env expansion)", "string"
+                )
+            ],
+        )
     return registry
 
 
