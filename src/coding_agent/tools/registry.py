@@ -3,6 +3,7 @@
 import time
 import traceback
 from collections.abc import Callable
+from typing import Any
 
 from coding_agent.observability import MetricsCollector, get_metrics_collector
 
@@ -13,17 +14,18 @@ class ToolRegistry:
     """Manages registered tools and their definitions."""
 
     def __init__(self, metrics: MetricsCollector | None = None):
-        self._tools: dict[str, Callable] = {}
+        self._tools: dict[str, Callable[..., Any]] = {}
         self._definitions: dict[str, ToolDefinition] = {}
         self.metrics = metrics or get_metrics_collector()
 
     def register(
         self,
         name: str,
-        func: Callable,
+        func: Callable[..., Any],
         description: str,
         parameters: list[ToolParameter] | None = None,
         return_type: str = "string",
+        input_schema: dict[str, Any] | None = None,
     ) -> None:
         """Register a new tool.
 
@@ -43,6 +45,7 @@ class ToolRegistry:
             description=description,
             parameters=parameters or [],
             return_type=return_type,
+            input_schema=input_schema,
         )
 
     def get_definition(self, name: str) -> ToolDefinition | None:

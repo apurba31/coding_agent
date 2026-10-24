@@ -1,6 +1,7 @@
 """BM25 Keyword Search implementation."""
 
 import re
+from heapq import nlargest
 
 from rank_bm25 import BM25Plus
 
@@ -94,22 +95,21 @@ class BM25Searcher:
             tokenized_query = CodeTokenizer.tokenize(query)
             scores = self.bm25.get_scores(tokenized_query)
 
-        results = []
-        for i, score in enumerate(scores):
-            # BM25Plus scores are strictly positive if there is any match
-            if score > 0:
-                results.append(
-                    SearchResult(
-                        chunk=self.chunks[i],
-                        score=score,
-                        chunk_id=self.chunks[i].chunk_id,
-                        bm25_score=score,
-                        semantic_score=None,
-                        final_score=None,
-                    )
-                )
-
-        # Sort by score descending
-        results.sort(key=lambda x: x.score, reverse=True)
-        self.metrics.observe("search.bm25.results", len(results[:top_k]))
-        return results[:top_k]
+        top_scored = nlargest(
+            top_k,
+            ((index, score) for index, score in enumerate(scores) if score > 0),
+            key=lambda item: item[1],
+        )
+        results = [
+            SearchResult(
+                chunk=self.chunks[index],
+                score=score,
+                chunk_id=self.chunks[index].chunk_id,
+                bm25_score=score,
+                semantic_score=None,
+                final_score=None,
+            )
+            for index, score in top_scored
+        ]
+        self.metrics.observe("search.bm25.results", len(results))
+        return results

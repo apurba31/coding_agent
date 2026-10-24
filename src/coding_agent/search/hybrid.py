@@ -1,6 +1,7 @@
 """Hybrid search implementation combining BM25 and semantic search."""
 
 from coding_agent.observability import MetricsCollector
+from coding_agent.reranker.reranker import Reranker
 
 from .keyword import BM25Searcher
 from .models import SearchResult
@@ -16,6 +17,7 @@ class HybridSearcher:
         semantic_searcher: SemanticSearcher,
         bm25_weight: float = 0.4,
         semantic_weight: float = 0.6,
+        reranker: Reranker | None = None,
         metrics: MetricsCollector | None = None,
     ):
         """Initialize hybrid searcher.
@@ -34,6 +36,7 @@ class HybridSearcher:
         total = bm25_weight + semantic_weight
         self.bm25_weight = bm25_weight / total if total > 0 else 0.5
         self.semantic_weight = semantic_weight / total if total > 0 else 0.5
+        self.reranker = reranker
 
     def search(self, query: str, top_k: int = 10) -> list[SearchResult]:
         """Perform hybrid search combining BM25 and semantic results.
@@ -125,6 +128,13 @@ class HybridSearcher:
             reverse=True,
         )
 
-        results = sorted_results[:top_k]
+        pool_size = top_k * 2 if self.reranker else top_k
+        candidates = sorted_results[:pool_size]
+        if self.reranker:
+            with metrics.measure("search.rerank"):
+                results = self.reranker.rerank(query, candidates, top_k)
+            metrics.observe("search.rerank.results", len(results))
+        else:
+            results = candidates
         metrics.observe("search.hybrid.results", len(results))
         return results

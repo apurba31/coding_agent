@@ -7,6 +7,7 @@ import pytest
 
 from coding_agent.chunker.models import Chunk, ChunkKind
 from coding_agent.embedding.mock import MockEmbedder
+from coding_agent.reranker import ScoreFusionReranker
 from coding_agent.search.hybrid import HybridSearcher
 from coding_agent.search.keyword import BM25Searcher
 from coding_agent.search.models import SearchResult
@@ -170,6 +171,22 @@ def test_hybrid_search_consistency(bm25_searcher, semantic_searcher):
 
     assert len(results1) == len(results2)
     assert [r.chunk_id for r in results1] == [r.chunk_id for r in results2]
+
+
+def test_hybrid_search_with_reranker_records_rerank_timing(bm25_searcher, semantic_searcher):
+    from coding_agent.observability import MetricsCollector
+
+    metrics = MetricsCollector()
+    hybrid = HybridSearcher(
+        bm25_searcher,
+        semantic_searcher,
+        reranker=ScoreFusionReranker(alpha=0.7),
+        metrics=metrics,
+    )
+    results = hybrid.search("calculate sum", top_k=2)
+
+    assert results
+    assert "search.rerank" in metrics.snapshot().timings
 
 
 def test_hybrid_search_weight_impact(bm25_searcher, semantic_searcher):

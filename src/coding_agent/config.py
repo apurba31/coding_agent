@@ -9,7 +9,18 @@ is read separately by the LLM client and is never stored on this object.
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class MCPServerConfig(BaseModel):
+    """Command and explicit environment for one local stdio MCP server."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    command: str = Field(min_length=1)
+    args: list[str] = Field(default_factory=list)
+    env: dict[str, str] = Field(default_factory=dict)
 
 
 class AgentConfig(BaseSettings):
@@ -30,9 +41,12 @@ class AgentConfig(BaseSettings):
     vector_db_path: Path = Path(".mini-agent/lancedb")
     memory_path: Path = Path(".mini-agent/conversations")
     top_k: int = 5
+    use_reranker: bool = True
+    rerank_alpha: float = 0.7
     token_budget: int = 1200
     terminal_timeout_seconds: float = 15.0
     terminal_max_output_bytes: int = 32_000
+    mcp_servers: dict[str, MCPServerConfig] = Field(default_factory=dict)
 
 
 @lru_cache(maxsize=1)

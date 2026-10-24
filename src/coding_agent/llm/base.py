@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Callable
 
 
 class LLMClient(ABC):
@@ -27,3 +27,18 @@ class LLMClient(ABC):
     ) -> Any:
         """Compatibility shim for existing code expecting generate_response()."""
         return self.complete(messages=messages, tools=tools, **kwargs)
+
+    def stream_response(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        on_token: Callable[[str], None] | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Stream when supported, or deliver a complete response as one chunk."""
+        response = self.generate_response(messages=messages, tools=tools, **kwargs)
+        if on_token:
+            content = response.choices[0].message.content
+            if content:
+                on_token(content)
+        return response

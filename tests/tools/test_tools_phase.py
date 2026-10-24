@@ -31,6 +31,34 @@ def test_repository_toolbox_writes_within_repo_only(tmp_path):
         toolbox.write_file("../escape.txt", "nope")
 
 
+def test_run_tests_tool_is_registered_with_terminal_enabled(tmp_path):
+    from coding_agent.app import create_coding_tools
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "tests").mkdir()
+    (repo / "tests" / "sample_test.py").write_text(
+        "def test_ok():\n    assert True\n",
+        encoding="utf-8",
+    )
+
+    class EmptyRetriever:
+        def search(self, query, top_k):
+            return []
+
+    registry = create_coding_tools(
+        repo,
+        EmptyRetriever(),
+        allow_terminal=True,
+    )
+    assert registry.has_tool("run_tests")
+    from coding_agent.tools.models import ToolCall
+
+    outcome = registry.call(ToolCall("run_tests", {"target": "tests"}))
+    assert outcome.success
+    assert "exit_code=" in str(outcome.result)
+
+
 def test_terminal_tool_blocks_dangerous_shell_metacharacters(tmp_path):
     tool = TerminalTool(cwd=tmp_path)
 

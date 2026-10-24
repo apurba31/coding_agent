@@ -23,10 +23,11 @@ class ToolDefinition:
     description: str
     parameters: list[ToolParameter] = field(default_factory=list)
     return_type: str = "string"
+    input_schema: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for LLM consumption."""
-        return {
+        definition: dict[str, Any] = {
             "name": self.name,
             "description": self.description,
             "parameters": [
@@ -41,6 +42,9 @@ class ToolDefinition:
             ],
             "return_type": self.return_type,
         }
+        if self.input_schema is not None:
+            definition["input_schema"] = self.input_schema
+        return definition
 
 
 @dataclass

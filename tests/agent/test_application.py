@@ -261,6 +261,7 @@ def test_chat_cli_runs_agent_and_persists_conversation(tmp_path, monkeypatch):
 
     assert result.exit_code == 0, result.output
     assert "It adds 42 to the value." in result.output
+    assert result.output.count("It adds 42 to the value.") == 1
     saved_conversations = list(memory_path.glob("*.json"))
     assert len(saved_conversations) == 1
 
@@ -312,4 +313,5 @@ def test_multi_agent_chat_hands_research_to_final_agent(tmp_path, monkeypatch):
     assert "The function in main.py adds 42" in fake_llm.calls[1]["messages"][0]["content"]
     assert fake_llm.calls[1]["messages"][-1]["content"] == "Explain the function"
     assert "It adds 42 to the input value." in result.output
+    assert result.output.count("It adds 42 to the input value.") == 1
     assert len(list(memory_path.glob("*.json"))) == 1

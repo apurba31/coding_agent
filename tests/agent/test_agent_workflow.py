@@ -2,6 +2,9 @@
 
 from types import SimpleNamespace
 
+import pytest
+from langgraph.errors import GraphRecursionError
+
 from coding_agent.agent.executor import AgentExecutor
 from coding_agent.agent.prompt import PromptBuilder
 from coding_agent.agent.workflow import LangGraphAgent
@@ -34,7 +37,7 @@ class FakeRetriever:
         return []
 
 
-def _graph(llm, retriever=None, registry=None):
+def _graph(llm, retriever=None, registry=None, checkpoint_path=None):
     executor = AgentExecutor(
         llm_client=llm,
         tool_registry=registry or ToolRegistry(),
@@ -42,13 +45,13 @@ def _graph(llm, retriever=None, registry=None):
         retriever=retriever,
         planner=SimplePlanner(),
     )
-    return LangGraphAgent(executor)
+    return LangGraphAgent(executor, checkpoint_path=checkpoint_path)
 
 
-def test_graph_direct_path_skips_retrieval_and_tools():
+def test_graph_direct_path_skips_retrieval_and_tools(tmp_path):
     llm = FakeLLM([_response(content="Recursion calls itself.")])
     retriever = FakeRetriever()
-    graph = _graph(llm, retriever)
+    graph = _graph(llm, retriever, checkpoint_path=tmp_path / "checkpoints.sqlite")
 
     result = graph.execute("Explain recursion simply")
 
@@ -58,12 +61,17 @@ def test_graph_direct_path_skips_retrieval_and_tools():
     assert llm.calls[0]["tools"] is None
 
 
-def test_graph_retrieval_path_retrieves_once_without_enabling_tools():
+def test_graph_retrieval_path_retrieves_once_without_enabling_tools(tmp_path):
     llm = FakeLLM([_response(content="The class handles users.")])
     retriever = FakeRetriever()
     registry = ToolRegistry()
     registry.register("read_file", lambda path: path, "Read a file")
-    graph = _graph(llm, retriever, registry)
+    graph = _graph(
+        llm,
+        retriever,
+        registry,
+        checkpoint_path=tmp_path / "checkpoints.sqlite",
+    )
 
     result = graph.execute("Explain what the UserService class does")
 
@@ -73,7 +81,7 @@ def test_graph_retrieval_path_retrieves_once_without_enabling_tools():
     assert llm.calls[0]["tools"] is None
 
 
-def test_graph_tool_path_enables_tools_and_executes_tool_cycle():
+def test_graph_tool_path_enables_tools_and_executes_tool_cycle(tmp_path):
     call = SimpleNamespace(
         id="call-1",
         function=SimpleNamespace(name="find_definition", arguments='{"symbol":"UserService"}'),
@@ -92,7 +100,12 @@ def test_graph_tool_path_enables_tools_and_executes_tool_cycle():
         "Find symbol definition",
         [ToolParameter("symbol", "Name", "string")],
     )
-    graph = _graph(llm, retriever, registry)
+    graph = _graph(
+        llm,
+        retriever,
+        registry,
+        checkpoint_path=tmp_path / "checkpoints.sqlite",
+    )
 
     result = graph.execute("Find the definition of UserService")
 
@@ -103,9 +116,9 @@ def test_graph_tool_path_enables_tools_and_executes_tool_cycle():
     assert result["messages"][-2]["content"] == "Definition for UserService"
 
 
-def test_graph_passes_additional_context_without_duplicate_llm_calls():
+def test_graph_passes_additional_context_without_duplicate_llm_calls(tmp_path):
     llm = FakeLLM([_response(content="Grounded answer.")])
-    graph = _graph(llm)
+    graph = _graph(llm, checkpoint_path=tmp_path / "checkpoints.sqlite")
 
     result = graph.execute(
         "Explain recursion",
@@ -115,3 +128,41 @@ def test_graph_passes_additional_context_without_duplicate_llm_calls():
     assert result["status"] == "SUCCESS"
     assert len(llm.calls) == 1
     assert "recursive call at line 3" in llm.calls[0]["messages"][0]["content"]
+
+def test_graph_forwards_streamed_text_callback(tmp_path):
+    graph = _graph(
+        FakeLLM([_response(content="Streamed answer.")]),
+        checkpoint_path=tmp_path / "checkpoints.sqlite",
+    )
+    tokens = []
+
+    result = graph.execute("Explain recursion", on_token=tokens.append)
+
+    assert result["status"] == "SUCCESS"
+    assert tokens == ["Streamed answer."]
+
+
+def test_graph_resumes_interrupted_execution_from_sqlite_checkpoint(tmp_path):
+    checkpoint_path = tmp_path / "checkpoints.sqlite"
+    thread_id = "conversation-1"
+    graph = _graph(
+        FakeLLM([_response(content="Resumed successfully.")]),
+        checkpoint_path=checkpoint_path,
+    )
+
+    with pytest.raises(GraphRecursionError):
+        graph.graph.invoke(
+            {"goal": "Explain recursion simply", "conversation_id": thread_id},
+            config={"configurable": {"thread_id": thread_id}, "recursion_limit": 1},
+        )
+    graph.close()
+
+    reopened_graph = _graph(
+        FakeLLM([_response(content="Resumed successfully.")]),
+        checkpoint_path=checkpoint_path,
+    )
+    result = reopened_graph.resume(thread_id)
+
+    assert result["status"] == "SUCCESS"
+    assert result["messages"][-1]["content"] == "Resumed successfully."
+    reopened_graph.close()

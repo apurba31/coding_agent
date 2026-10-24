@@ -55,6 +55,16 @@ class PromptBuilder:
         Returns:
             Dictionary formatted as an OpenAI function tool.
         """
+        if tool_def.input_schema is not None:
+            return {
+                "type": "function",
+                "function": {
+                    "name": tool_def.name,
+                    "description": tool_def.description,
+                    "parameters": tool_def.input_schema,
+                },
+            }
+
         properties = {}
         required = []
         json_schema_types = {

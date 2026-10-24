@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from coding_agent.llm.base import LLMClient
+from coding_agent.llm.streaming import collect_chat_stream
 
 
 class OpenAICompatibleClient(LLMClient):
@@ -55,3 +56,14 @@ class OpenAICompatibleClient(LLMClient):
         **kwargs: Any,
     ) -> Any:
         return self.complete(messages=messages, tools=tools, **kwargs)
+
+    def stream_response(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        on_token: Callable[[str], None] | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Stream provider deltas and return a completion-like aggregate."""
+        chunks = self.complete(messages=messages, tools=tools, stream=True, **kwargs)
+        return collect_chat_stream(chunks, on_token)
