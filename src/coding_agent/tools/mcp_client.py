@@ -172,9 +172,7 @@ class MCPToolManager:
         if self._request_send is not None:
             await self._request_send.send(None)
 
-    def _call_tool_sync(
-        self, server_name: str, tool_name: str, arguments: dict[str, Any]
-    ) -> Any:
+    def _call_tool_sync(self, server_name: str, tool_name: str, arguments: dict[str, Any]) -> Any:
         if self._portal is None:
             raise RuntimeError("MCP client is not connected")
         response: Future[Any] = Future()

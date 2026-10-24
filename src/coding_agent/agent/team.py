@@ -130,10 +130,7 @@ class MultiAgentCoordinator:
         """Split explicit list items and distinct question clauses conservatively."""
         listed_tasks = re.split(r"\n(?=\s*(?:[-*]|\d+[.)])\s+)", goal)
         if len(listed_tasks) > 1:
-            parts = [
-                re.sub(r"^\s*(?:[-*]|\d+[.)])\s+", "", item).strip()
-                for item in listed_tasks
-            ]
+            parts = [re.sub(r"^\s*(?:[-*]|\d+[.)])\s+", "", item).strip() for item in listed_tasks]
         else:
             parts = re.split(
                 rf";|\?(?:\s+|$)|\s+(?:and|also|additionally|plus)\s+"
@@ -177,9 +174,7 @@ class MultiAgentCoordinator:
         try:
             return runner.execute(
                 goal,
-                additional_context=(
-                    f"Assigned research subtask: {task}" if task != goal else None
-                ),
+                additional_context=(f"Assigned research subtask: {task}" if task != goal else None),
             )
         finally:
             if runner is not self.researcher:

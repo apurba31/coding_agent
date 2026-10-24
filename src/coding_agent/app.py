@@ -97,9 +97,7 @@ def _make_searcher(
 ) -> HybridSearcher:
     settings = _settings()
     chunks, _, _, _ = RepositoryIndexer(embedder, db_client).collect_chunks(repo)
-    reranker = (
-        ScoreFusionReranker(alpha=settings.rerank_alpha) if settings.use_reranker else None
-    )
+    reranker = ScoreFusionReranker(alpha=settings.rerank_alpha) if settings.use_reranker else None
     return HybridSearcher(
         BM25Searcher(chunks),
         SemanticSearcher(embedder, db_client),

@@ -62,9 +62,9 @@ class LangGraphAgent:
             SqliteSaver.from_conn_string(str(self.checkpoint_path))
         )
         self._checkpointer = self._checkpointer_context.__enter__()
-        self.graph: CompiledStateGraph[
-            WorkflowState, None, WorkflowState, WorkflowState
-        ] = self._build_graph().compile(checkpointer=self._checkpointer)
+        self.graph: CompiledStateGraph[WorkflowState, None, WorkflowState, WorkflowState] = (
+            self._build_graph().compile(checkpointer=self._checkpointer)
+        )
 
     @property
     def conversation_manager(self) -> ConversationManager | None:

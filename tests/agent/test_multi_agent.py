@@ -117,9 +117,7 @@ def test_coordinator_keeps_simple_goal_as_one_research_task():
     researcher = StubAgent(_state("SUCCESS", "One focused investigation."))
     synthesizer = StubAgent(_state("SUCCESS", "Answer."))
 
-    result = MultiAgentCoordinator(researcher, synthesizer).execute(
-        "Explain the calculation"
-    )
+    result = MultiAgentCoordinator(researcher, synthesizer).execute("Explain the calculation")
 
     assert result.status == "SUCCESS"
     assert len(result.researches) == 1

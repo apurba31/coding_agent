@@ -129,6 +129,7 @@ def test_graph_passes_additional_context_without_duplicate_llm_calls(tmp_path):
     assert len(llm.calls) == 1
     assert "recursive call at line 3" in llm.calls[0]["messages"][0]["content"]
 
+
 def test_graph_forwards_streamed_text_callback(tmp_path):
     graph = _graph(
         FakeLLM([_response(content="Streamed answer.")]),

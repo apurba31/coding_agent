@@ -135,9 +135,7 @@ def test_openai_compatible_stream_response_forwards_deltas():
                 [
                     SimpleNamespace(
                         choices=[
-                            SimpleNamespace(
-                                delta=SimpleNamespace(content="chunk", tool_calls=None)
-                            )
+                            SimpleNamespace(delta=SimpleNamespace(content="chunk", tool_calls=None))
                         ],
                         usage=None,
                     )
