@@ -2,8 +2,11 @@
 
 from types import SimpleNamespace
 
+import pytest
+
 from coding_agent.llm.base import LLMClient
 from coding_agent.llm.client import GroqClient
+from coding_agent.llm.factory import create_llm_client
 from coding_agent.llm.providers.openai import OpenAICompatibleClient
 
 
@@ -157,3 +160,48 @@ def test_openai_compatible_stream_response_forwards_deltas():
     assert transport.calls[0]["stream"] is True
     assert tokens == ["chunk"]
     assert response.choices[0].message.content == "chunk"
+
+
+def test_create_groq_client_uses_optional_model_override(monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+
+    client = create_llm_client("groq", "test-model")
+
+    assert isinstance(client, GroqClient)
+    assert client.default_model == "test-model"
+
+
+def test_create_nvidia_client_uses_nim_settings(monkeypatch):
+    calls = []
+
+    class FakeOpenAITransport:
+        def __init__(self, **kwargs):
+            calls.append(kwargs)
+
+    monkeypatch.setattr("coding_agent.llm.factory.OpenAI", FakeOpenAITransport)
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+    monkeypatch.setenv("NVIDIA_BASE_URL", "https://example.test/v1")
+
+    client = create_llm_client("nvidia", "test-model")
+
+    assert isinstance(client, OpenAICompatibleClient)
+    assert client.api_key == "test-key"
+    assert client.base_url == "https://example.test/v1"
+    assert client.default_model == "test-model"
+    assert calls == [{"api_key": "test-key", "base_url": "https://example.test/v1"}]
+
+
+def test_create_nvidia_client_requires_key_and_model(monkeypatch):
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    with pytest.raises(ValueError, match="NVIDIA_API_KEY"):
+        create_llm_client("nvidia", "test-model")
+
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+    monkeypatch.delenv("NVIDIA_MODEL", raising=False)
+    with pytest.raises(ValueError, match="MINI_AGENT_LLM_MODEL or NVIDIA_MODEL"):
+        create_llm_client("nvidia")
+
+
+def test_create_llm_client_rejects_unknown_provider():
+    with pytest.raises(ValueError, match="Unsupported LLM provider"):
+        create_llm_client("unknown")

@@ -1,9 +1,11 @@
 import logging
 import os
 
+from dotenv import load_dotenv
+
 from coding_agent.agent.executor import AgentExecutor
 from coding_agent.agent.prompt import PromptBuilder
-from coding_agent.llm.client import GroqClient
+from coding_agent.llm.factory import create_llm_client
 from coding_agent.tools.models import ToolParameter
 from coding_agent.tools.registry import ToolRegistry
 
@@ -25,11 +27,7 @@ def example_calculator(a: float, b: float, operation: str) -> float:
 
 
 def main():
-    # Make sure to have GROQ_API_KEY in the environment
-    # os.environ["GROQ_API_KEY"] = "your-api-key"
-    if not os.environ.get("GROQ_API_KEY"):
-        print("Please set GROQ_API_KEY to test the agent.")
-        return
+    load_dotenv()
 
     # Setup Tool Registry
     registry = ToolRegistry()
@@ -38,13 +36,16 @@ def main():
         func=example_calculator,
         description="Performs basic arithmetic operations.",
         parameters=[
-            ToolParameter(name="a", type="number", description="The first number", required=True),
-            ToolParameter(name="b", type="number", description="The second number", required=True),
+            ToolParameter(
+                name="a", description="The first number", param_type="number", required=True
+            ),
+            ToolParameter(
+                name="b", description="The second number", param_type="number", required=True
+            ),
             ToolParameter(
                 name="operation",
-                type="string",
                 description="The operation to perform",
-                enum=["add", "subtract", "multiply", "divide"],
+                param_type="string",
                 required=True,
             ),
         ],
@@ -52,7 +53,9 @@ def main():
     )
 
     # Setup components
-    llm_client = GroqClient(default_model="llama3-70b-8192")
+    provider = os.environ.get("MINI_AGENT_LLM_PROVIDER", "groq")
+    model = os.environ.get("MINI_AGENT_LLM_MODEL")
+    llm_client = create_llm_client(provider, model)
     prompt_builder = PromptBuilder(
         system_prompt="You are a helpful AI assistant. You can use tools to answer questions."
     )

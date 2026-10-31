@@ -27,17 +27,13 @@ The goal is to understand every subsystem that powers modern AI coding assistant
 - Structured per-process latency, token, batch, tool, and retrieval metrics
 - Interactive repository chat
 - Optional researcher-to-synthesizer multi-agent workflow
-- Bounded in-memory caching for deterministic, tool-free LLM requests
-- Streamed assistant text in interactive chat
-- Optional, configured local MCP stdio tools
 - Read-only `read_file` and `search_code` tools
 - AST-backed `find_definition` and `search_symbols`, plus lexical `find_references`
 - Modular architecture
 
 Indexing and AST chunk extraction currently support Python, Java, JavaScript, and TypeScript.
-Chat requires a Groq API key and uses the local Sentence Transformers model. By default the
-agent is read-only; pass `--allow-write` and/or `--allow-terminal` to enable editing and
-bounded test/shell execution.
+Chat requires a Groq API key and uses the local Sentence Transformers model. The agent is
+read-only: it can inspect and search repository files, but does not edit them.
 
 ---
 
@@ -120,12 +116,6 @@ Install dependencies
 pip install -e .
 ```
 
-To enable configured local MCP stdio servers, install the optional extra:
-
-```bash
-pip install -e '.[mcp]'
-```
-
 Create
 
 ```
@@ -199,16 +189,11 @@ Interactive chat
 mini-agent chat
 ```
 
-Use `mini-agent chat --multi-agent` to split compound research requests into up to five parallel
-research tasks, then synthesize their findings. Simple requests remain a single research task.
-
-Optional flags: `--allow-write` (file edits), `--allow-terminal` (`run_terminal`, `run_tests`).
-Hybrid search applies an optional score-fusion reranker (see `docs/retrieval.md`).
+Use `mini-agent chat --multi-agent` to run a tool-enabled research agent followed by a separate
+answer-synthesis agent. This makes two sequential model passes per request.
 
 Chat execution uses a LangGraph workflow to route requests through direct-answer, retrieval, or
-tool-enabled paths. Model and tool execution are separate graph nodes, with each completed node
-checkpointed to SQLite alongside the conversation files. An interrupted execution can be resumed
-programmatically with `LangGraphAgent.resume(conversation_id)`.
+tool-enabled paths. The bounded LLM/tool iteration remains inside the executor for now.
 
 Resume a saved chat with `--conversation-id <id>`. Enter `/exit` to leave the interactive
 session; use `--memory-path` to select a different conversation directory.
@@ -253,14 +238,10 @@ src/coding_agent/
 - [x] Structured timings/counters for indexing, search, prompt/LLM, token usage, and tools
 - [x] Phase timings and counters surfaced by `index` and `stats`
 - [x] Offline fixture-based end-to-end indexing, navigation, retrieval, and agent-answer test
-- [x] Move legacy flat subsystem tests into dedicated package directories
-- [x] File-editing tools and test execution (CLI opt-in)
-- [x] Reranking (ScoreFusionReranker in hybrid search)
-- [x] Subsystem documentation under `docs/`
-- [x] Graph-native iterative tool nodes and SQLite checkpointing
-- [x] Rule-based dynamic task delegation with bounded parallel researcher agents
-- [x] Optional MCP client for configured local stdio servers
-- [x] Streaming, caching, and performance work
-  - [x] Bounded exact-request cache for temperature-zero, tool-free LLM calls
-  - [x] End-to-end streamed assistant output for Groq and OpenAI-compatible clients
-  - [x] Profile and optimize measured hotspots
+- [ ] Move legacy flat subsystem tests into dedicated package directories
+- [ ] File-editing tools and test execution
+- [ ] Reranking
+- [ ] Graph-native iterative tool nodes and checkpointing
+- [ ] Parallel/dynamic multi-agent delegation
+- [ ] MCP
+- [ ] Streaming, caching, and performance work

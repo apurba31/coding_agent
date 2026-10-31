@@ -23,8 +23,8 @@ from coding_agent.embedding.models import EmbeddingConfig
 from coding_agent.embedding.sentence_transformers import SentenceTransformerEmbedder
 from coding_agent.indexing.manifest import IndexManifestStore
 from coding_agent.indexing.service import RepositoryIndexer
-from coding_agent.llm.client import GroqClient
 from coding_agent.llm.cache import CachedLLMClient
+from coding_agent.llm.factory import create_llm_client
 from coding_agent.memory.store import ConversationManager, ConversationStore
 from coding_agent.navigation import NavigationIndex
 from coding_agent.observability import get_metrics_collector
@@ -571,6 +571,17 @@ def search_symbols_command(
 def chat(
     repo: Annotated[Path, typer.Option("--repo", exists=True, file_okay=False)] = Path("."),
     db_path: Annotated[Path, typer.Option("--db-path")] = DEFAULT_DB_PATH,
+    provider: Annotated[
+        str | None,
+        typer.Option(
+            "--provider",
+            help="LLM provider: groq or nvidia (defaults to MINI_AGENT_LLM_PROVIDER).",
+        ),
+    ] = None,
+    model: Annotated[
+        str | None,
+        typer.Option("--model", help="Model override for the selected LLM provider."),
+    ] = None,
     memory_path: Annotated[
         Path, typer.Option("--memory-path", help="Directory for saved conversations.")
     ] = Path(".mini-agent/conversations"),
@@ -599,7 +610,10 @@ def chat(
     load_dotenv()
     mcp_manager: MCPToolManager | None = None
     try:
-        llm_client = CachedLLMClient(GroqClient())
+        settings = _settings()
+        llm_client = CachedLLMClient(
+            create_llm_client(provider or settings.llm_provider, model or settings.llm_model)
+        )
         embedder = _make_embedder()
         db_client = _make_db_client(db_path, embedder.embedding_dimension)
         retriever = _make_searcher(repo, embedder, db_client)
@@ -617,7 +631,16 @@ def chat(
         conversation_manager = ConversationManager(ConversationStore(memory_path))
         system_prompt = SYSTEM_PROMPT
         if allow_write:
-            system_prompt += "\nYou may write files with write_file when the user asks for edits."
+            system_prompt += (
+                f"\nFile edits are enabled for the repository at {repo.resolve()}. "
+                "Use repository-relative paths with write_file. Only report a file as "
+                "created or changed after write_file returns successfully."
+            )
+        else:
+            system_prompt += (
+                "\nFile edits are disabled in this session. Do not claim that you created, "
+                "changed, or saved a file; tell the user to restart chat with --allow-write."
+            )
         if allow_terminal:
             system_prompt += (
                 "\nYou may run tests with run_tests or bounded shell commands with run_terminal."
@@ -667,7 +690,8 @@ def chat(
         typer.echo(f"Unable to start chat: {error}", err=True)
         raise typer.Exit(code=1) from error
 
-    typer.echo("Chat ready. Enter /exit to quit.")
+    write_status = "File writing enabled." if allow_write else "File writing disabled."
+    typer.echo(f"Chat ready. {write_status} Enter /exit to quit.")
     while True:
         try:
             goal = typer.prompt("You")

@@ -242,7 +242,7 @@ def test_chat_cli_runs_agent_and_persists_conversation(tmp_path, monkeypatch):
 
     monkeypatch.setattr(app_module, "_make_embedder", lambda: MockEmbedder(embedding_dim=32))
     monkeypatch.setattr(app_module, "_make_searcher", lambda *args: FakeRetriever())
-    monkeypatch.setattr(app_module, "GroqClient", FakeLLM)
+    monkeypatch.setattr(app_module, "create_llm_client", lambda *args: FakeLLM())
     memory_path = tmp_path / "conversations"
 
     result = runner.invoke(
@@ -290,7 +290,7 @@ def test_multi_agent_chat_hands_research_to_final_agent(tmp_path, monkeypatch):
     fake_llm = FakeLLM()
     monkeypatch.setattr(app_module, "_make_embedder", lambda: MockEmbedder(embedding_dim=32))
     monkeypatch.setattr(app_module, "_make_searcher", lambda *args: FakeRetriever())
-    monkeypatch.setattr(app_module, "GroqClient", lambda: fake_llm)
+    monkeypatch.setattr(app_module, "create_llm_client", lambda *args: fake_llm)
     memory_path = tmp_path / "conversations"
 
     result = runner.invoke(

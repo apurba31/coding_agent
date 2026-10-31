@@ -1,5 +1,4 @@
 """Offline end-to-end coverage for repository indexing through an agent answer."""
-
 from pathlib import Path
 from types import SimpleNamespace
 

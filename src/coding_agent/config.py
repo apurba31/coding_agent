@@ -8,6 +8,7 @@ is read separately by the LLM client and is never stored on this object.
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -36,7 +37,8 @@ class AgentConfig(BaseSettings):
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_device: str = "cpu"
     embedding_batch_size: int = 32
-    llm_model: str = "llama3-70b-8192"
+    llm_provider: Literal["groq", "nvidia"] = "groq"
+    llm_model: str | None = None
     repository_path: Path = Path(".")
     vector_db_path: Path = Path(".mini-agent/lancedb")
     memory_path: Path = Path(".mini-agent/conversations")
