@@ -18,6 +18,7 @@ from coding_agent.agent.team import (
     MultiAgentCoordinator,
 )
 from coding_agent.agent.workflow import LangGraphAgent
+from coding_agent.config import AgentConfig, get_config
 from coding_agent.embedding.mock import MockEmbedder
 from coding_agent.embedding.models import EmbeddingConfig
 from coding_agent.embedding.sentence_transformers import SentenceTransformerEmbedder
@@ -29,18 +30,17 @@ from coding_agent.memory.store import ConversationManager, ConversationStore
 from coding_agent.navigation import NavigationIndex
 from coding_agent.observability import get_metrics_collector
 from coding_agent.planner import SimplePlanner
+from coding_agent.reranker import ScoreFusionReranker
 from coding_agent.scanner.ignore import IGNORE_DIRECTORIES
 from coding_agent.scanner.scanner import RepositoryScanner
-from coding_agent.reranker import ScoreFusionReranker
 from coding_agent.search.hybrid import HybridSearcher
 from coding_agent.search.keyword import BM25Searcher
 from coding_agent.search.semantic import SemanticSearcher
-from coding_agent.config import AgentConfig, get_config
 from coding_agent.security import SecurityPolicy
 from coding_agent.tools.filesystem import RepositoryToolbox
 from coding_agent.tools.git import GitToolbox
-from coding_agent.tools.models import ToolParameter
 from coding_agent.tools.mcp_client import MCPToolManager
+from coding_agent.tools.models import ToolParameter
 from coding_agent.tools.registry import ToolRegistry
 from coding_agent.tools.terminal import TerminalTool
 from coding_agent.vectordb.client import LanceDBClient

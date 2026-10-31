@@ -1,7 +1,8 @@
 """Helpers for assembling OpenAI-compatible chat completion streams."""
 
+from collections.abc import Callable, Iterable
 from types import SimpleNamespace
-from typing import Any, Callable, Iterable
+from typing import Any
 
 
 def collect_chat_stream(

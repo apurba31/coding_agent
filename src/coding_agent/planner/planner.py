@@ -31,15 +31,23 @@ _REPOSITORY_TERMS = {
     "tests",
 }
 _TOOL_INTENTS = {
+    "add",
+    "append",
+    "change",
+    "create",
     "definition",
+    "edit",
     "find",
     "locate",
+    "modify",
     "open",
     "read",
     "references",
     "search",
     "show",
     "inspect",
+    "update",
+    "write",
 }
 _CODE_IDENTIFIER = re.compile(
     r"\b(?:[a-z]+[A-Z][A-Za-z0-9]*|[A-Z][a-z0-9]+(?:[A-Z][A-Za-z0-9]*)+|"
@@ -61,7 +69,8 @@ class SimplePlanner(Planner):
 
     This first planner deliberately avoids another model call. It opts into
     repository work for repository vocabulary, paths, or code-like identifiers,
-    and exposes tools only when the user explicitly asks to inspect/find/read.
+    and exposes tools only for explicit repository lookups or file-editing
+    requests.
     """
 
     def plan(self, goal: str) -> TaskPlan:
@@ -81,7 +90,7 @@ class SimplePlanner(Planner):
             return TaskPlan(
                 PlanRoute.TOOL,
                 "Repository context is relevant and the request explicitly asks "
-                "to find or inspect code.",
+                "to use repository tools.",
             )
         return TaskPlan(
             PlanRoute.RETRIEVE,

@@ -2,7 +2,8 @@
 
 import json
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from coding_agent.llm.base import LLMClient
 from coding_agent.memory.models import Conversation, MessageRole

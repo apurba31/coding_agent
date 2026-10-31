@@ -3,8 +3,9 @@
 import hashlib
 import json
 from collections import OrderedDict
+from collections.abc import Callable
 from threading import RLock
-from typing import Any, Callable
+from typing import Any
 
 from coding_agent.llm.base import LLMClient
 from coding_agent.observability import MetricsCollector, get_metrics_collector

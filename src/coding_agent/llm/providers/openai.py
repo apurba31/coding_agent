@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from coding_agent.llm.base import LLMClient
 from coding_agent.llm.streaming import collect_chat_stream

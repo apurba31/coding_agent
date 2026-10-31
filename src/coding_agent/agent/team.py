@@ -1,9 +1,10 @@
 """Bounded multi-agent delegation with an explicit synthesis handoff."""
 
 import re
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from typing import Callable, Literal, Protocol
+from typing import Literal, Protocol
 
 from .state import AgentState
 

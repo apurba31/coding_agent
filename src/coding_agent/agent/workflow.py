@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from contextlib import AbstractContextManager
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Callable, NotRequired, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 from langchain_core.runnables import RunnableConfig
-from langgraph.graph import END, START, StateGraph
 from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from coding_agent.planner import Planner, SimplePlanner, TaskPlan
 from coding_agent.memory.store import ConversationManager
+from coding_agent.planner import Planner, SimplePlanner, TaskPlan
 
 from .executor import AgentExecutor
 from .state import AgentState
